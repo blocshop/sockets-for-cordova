@@ -1,0 +1,152 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading.Tasks;
+using WPCordovaClassLib.Cordova;
+using WPCordovaClassLib.Cordova.Commands;
+using WPCordovaClassLib.Cordova.JSON;
+
+namespace Blocshop.ScoketsForCordova
+{
+    public class SocketPlugin : BaseCommand
+    {
+        private readonly ISocketStorage socketStorage;
+        private string eventDispatcherCallbackId;
+
+        public SocketPlugin()
+        {
+            System.Diagnostics.Debug.WriteLine("SocketPlugin constructor: " + DateTime.Now.Ticks);
+            this.socketStorage = SocketStorage.CreateSocketStorage();
+        }
+
+        public void create(string parameters)
+        {
+            string socketKey = JsonHelper.Deserialize<string[]>(parameters)[0];
+
+            ISocketAdapter socketAdapter = new SocketAdapter();
+            socketAdapter.CloseEventHandler = (hasError) => this.CloseEventHandler(socketKey, hasError);
+            socketAdapter.DataConsumer = (data) => this.DataConsumer(socketKey, data);
+            socketAdapter.ErrorHandler = (ex) => this.ErrorHandler(socketKey, ex);
+
+            this.socketStorage.Add(socketKey, socketAdapter);
+
+            this.DispatchCommandResult(new PluginResult(PluginResult.Status.OK));
+        }
+
+        public void registerWPEventDispatcher(string parameters)
+        {
+            this.eventDispatcherCallbackId = this.CurrentCommandCallbackId;
+            PluginResult result = new PluginResult(PluginResult.Status.OK);
+            result.KeepCallback = true;
+            DispatchCommandResult(result, this.eventDispatcherCallbackId);
+        }
+
+        public void connect(string parameters)
+        {
+            string socketKey = JsonHelper.Deserialize<string[]>(parameters)[0];
+            string host = JsonHelper.Deserialize<string[]>(parameters)[1];
+            int port = int.Parse(JsonHelper.Deserialize<string[]>(parameters)[2]);
+
+            ISocketAdapter socket = this.socketStorage.Get(socketKey);
+            try
+            {
+                socket.Connect(host, port).Wait();
+
+                this.DispatchCommandResult(new PluginResult(PluginResult.Status.OK));
+            }
+            catch (SocketException ex)
+            {
+                this.DispatchCommandResult(new PluginResult(PluginResult.Status.IO_EXCEPTION, ex.Message));
+            }
+        }
+
+        public void write(string parameters/*, string socketKey, byte[] data*/)
+        {
+            string socketKey = JsonHelper.Deserialize<string[]>(parameters)[0];
+            string dataJsonArray = JsonHelper.Deserialize<string[]>(parameters)[1];
+            byte[] data = JsonHelper.Deserialize<byte[]>(dataJsonArray);
+
+            ISocketAdapter socket = this.socketStorage.Get(socketKey);
+            try
+            {
+                socket.Write(data).Wait();
+
+                this.DispatchCommandResult(new PluginResult(PluginResult.Status.OK));
+            }
+            catch (SocketException ex)
+            {
+                this.DispatchCommandResult(new PluginResult(PluginResult.Status.IO_EXCEPTION, ex.Message));
+            }
+        }
+
+        public void close(string parameters)
+        {
+            string socketKey = JsonHelper.Deserialize<string[]>(parameters)[0];
+
+            ISocketAdapter socket = this.socketStorage.Get(socketKey);
+
+            socket.Close();
+        }
+
+        //private void setOptions(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
+
+        //    String socketKey = args.getString(0);
+        //    JSONObject optionsJSON = args.getJSONObject(1);
+
+        //    SocketAdapter socket = this.getSkocketAdapter(socketKey);
+
+        //    SocketAdapterOptions options = new SocketAdapterOptions();
+        //    options.setKeepAlive(getBooleanPropertyFromJSON(optionsJSON, "keepAlive"));
+        //    options.setOobInline(getBooleanPropertyFromJSON(optionsJSON, "oobInline"));
+        //    options.setReceiveBufferSize(getIntegerPropertyFromJSON(optionsJSON, "receiveBufferSize"));
+        //    options.setSendBufferSize(getIntegerPropertyFromJSON(optionsJSON, "sendBufferSize"));
+        //    options.setSoLinger(getIntegerPropertyFromJSON(optionsJSON, "soLinger"));
+        //    options.setSoTimeout(getIntegerPropertyFromJSON(optionsJSON, "soTimeout"));
+        //    options.setTrafficClass(getIntegerPropertyFromJSON(optionsJSON, "trafficClass"));
+
+        //    try {
+        //        socket.close();
+        //        callbackContext.success();
+        //    } catch (IOException e) {
+        //        callbackContext.error(e.toString());
+        //    }
+        //}
+
+        private void CloseEventHandler(string socketKey, bool hasError)
+        {
+            socketStorage.Remove(socketKey);
+            this.DispatchEvent(new CloseSocketEvent
+            {
+                HasError = hasError,
+                SocketKey = socketKey
+            });
+        }
+
+        private void DataConsumer(string socketKey, byte[] data)
+        {
+            this.DispatchEvent(new DataReceivedSocketEvent
+            {
+                Data = data,
+                SocketKey = socketKey
+            });
+        }
+
+        private void ErrorHandler(string socketKey, Exception exception)
+        {
+            this.DispatchEvent(new ErrorSocketEvent
+            {
+                ErrorMessage = exception.Message,
+                SocketKey = socketKey
+            });
+        }
+
+        private void DispatchEvent(SocketEvent eventObject)
+        {
+            PluginResult result = new PluginResult(PluginResult.Status.OK, JsonHelper.Serialize(eventObject));
+            result.KeepCallback = true;
+            DispatchCommandResult(result, this.eventDispatcherCallbackId);
+        }
+    }
+}

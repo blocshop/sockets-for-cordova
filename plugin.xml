@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="cz.blocshop.socketsforcordova" version="0.1.0">
+    <name>SocketsForCordova</name>
+    <description>Cordova plugin for socket communication</description>
+    <license>Apache 2.0</license>
+    <keywords>cordova,sockets,socket</keywords>
+
+
+    <js-module src="socket.js" name="Socket">
+        <clobbers target="window.Socket" />
+    </js-module>
+    
+    <!-- android -->
+    <platform name="android">
+        <config-file target="res/xml/config.xml" parent="/*">
+            <feature name="SocketsForCordova"> 
+                <param name="android-package" value="cz.blocshop.socketsforcordova.SocketPlugin"/>
+            </feature>
+        </config-file>
+		<config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.INTERNET" />
+        </config-file>  
+		<source-file src="src/android/src/cz/blocshop/socketsforcordova/Logging.java" target-dir="src/cz/blocshop/socketsforcordova" />
+        <source-file src="src/android/src/cz/blocshop/socketsforcordova/Consumer.java" target-dir="src/cz/blocshop/socketsforcordova" />
+		<source-file src="src/android/src/cz/blocshop/socketsforcordova/SocketAdapter.java" target-dir="src/cz/blocshop/socketsforcordova" />
+		<source-file src="src/android/src/cz/blocshop/socketsforcordova/SocketAdapterImpl.java" target-dir="src/cz/blocshop/socketsforcordova" />
+		<source-file src="src/android/src/cz/blocshop/socketsforcordova/SocketAdapterOptions.java" target-dir="src/cz/blocshop/socketsforcordova" />
+		<source-file src="src/android/src/cz/blocshop/socketsforcordova/SocketPlugin.java" target-dir="src/cz/blocshop/socketsforcordova" />
+		
+    </platform>
+    
+    <!-- ios
+    <platform name="ios">    
+        <config-file target="config.xml" parent="/*">
+            <feature name="InAppBrowser">
+                <param name="ios-package" value="CDVInAppBrowser" /> 
+            </feature>
+        </config-file>
+
+        <header-file src="src/ios/CDVInAppBrowser.h" />
+	    <source-file src="src/ios/CDVInAppBrowser.m" />
+	    
+	    <framework src="CoreGraphics.framework" />
+    </platform> -->
+
+
+    <!-- wp8 -->
+    <platform name="wp8">
+        <config-file target="config.xml" parent="/*">
+            <feature name="SocketsForCordova">
+                <param name="wp-package" value="Blocshop.ScoketsForCordova.SocketPlugin"/>
+            </feature>
+        </config-file>
+
+		<source-file src="src/wp8/src/SocketAdapter.cs" target-dir="src" />
+		<source-file src="src/wp8/src/SocketAdapterOptions.cs" target-dir="src" />
+		<source-file src="src/wp8/src/SocketExtensions.cs" target-dir="src" />
+		<source-file src="src/wp8/src/SocketPlugin.cs" target-dir="src" />
+		<source-file src="src/wp8/src/SocketEvent.cs" target-dir="src" />
+		<source-file src="src/wp8/src/SocketStorage.cs" target-dir="src" />
+    </platform>
+
+        
+
+</plugin>
