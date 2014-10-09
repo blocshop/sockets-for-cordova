@@ -1,12 +1,15 @@
 package cz.blocshop.socketsforcordova;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 
 public class SocketAdapterImpl implements SocketAdapter {
@@ -16,15 +19,18 @@ public class SocketAdapterImpl implements SocketAdapter {
     
     private Consumer<byte[]> dataConsumer;
     private Consumer<Boolean> closeEventHandler;
-    private Consumer<IOException> exceptionHandler;
+    private Consumer<Throwable> exceptionHandler;
+    
+    private ExecutorService executor;
 
     public SocketAdapterImpl() {
         this.socket = new Socket();
+        this.executor = Executors.newSingleThreadExecutor();
     }
 
     @Override
-    public void connect(String host, int port) throws IOException {
-        this.socket.connect(new InetSocketAddress(host, port));
+    public void connect(String host, int port) throws Throwable {
+    	this.connectSocket(host, port);
         this.submitReadTask();
     }
     
@@ -76,13 +82,32 @@ public class SocketAdapterImpl implements SocketAdapter {
     }
 
     @Override
-    public void setErrorHandler(Consumer<IOException> exceptionHandler) {
+    public void setErrorHandler(Consumer<Throwable> exceptionHandler) {
         this.exceptionHandler = exceptionHandler;
     }
     
+    private void connectSocket(final String host, final int port) throws Throwable {
+        Future future = this.executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+					socket.connect(new InetSocketAddress(host, port));
+				} catch (IOException e) {
+					Logging.Error(SocketAdapterImpl.class.getName(), "Error during connecting of socket", e);
+				}
+            }
+        });
+        
+        try {
+			Object result = future.get();
+        } 
+        catch (ExecutionException e) {
+			throw e.getCause();
+		}
+    }
+    
     private void submitReadTask() {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(new Runnable() {
+        this.executor.submit(new Runnable() {
             @Override
             public void run() {
                 runRead();
@@ -94,7 +119,7 @@ public class SocketAdapterImpl implements SocketAdapter {
         boolean hasError = false;
         try {
         	runReadLoop();
-        } catch (IOException e) {
+        } catch (Throwable e) {
         	Logging.Error(SocketAdapterImpl.class.getName(), "Error during reading of socket input stream", e);
             hasError = true;
             invokeExceptionHandler(e);
@@ -134,7 +159,7 @@ public class SocketAdapterImpl implements SocketAdapter {
         }
     }
     
-    private void invokeExceptionHandler(IOException exception) {
+    private void invokeExceptionHandler(Throwable exception) {
         if (this.exceptionHandler != null) {
             this.exceptionHandler.accept(exception);
         }

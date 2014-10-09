@@ -2,7 +2,11 @@ package cz.blocshop.socketsforcordova;
 
 import android.annotation.SuppressLint;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -60,8 +64,8 @@ public class SocketPlugin extends CordovaPlugin {
 		try {
 			socket.connect(host, port);
 			callbackContext.success();
-		} catch (IOException e) {
-			callbackContext.error(e.toString());
+		} catch (Throwable t) {
+			callbackContext.error(t.toString());
 		}
 	}
 	
@@ -174,7 +178,8 @@ public class SocketPlugin extends CordovaPlugin {
 			try {
 				JSONObject event = new JSONObject();
 				event.put("type", "DataReceived");
-				event.put("data", new JSONArray(data));
+				//event.put("data", new JSONArray(data)); NOT SUPPORTED IN API LEVEL LESS THAN 19
+				event.put("data", new JSONArray(this.toByteList(data)));
 				event.put("socketKey", socketKey);
 				
 				dispatchEvent(event);
@@ -182,15 +187,23 @@ public class SocketPlugin extends CordovaPlugin {
 				e.printStackTrace();
 			}
 		}
+		
+		private List<Byte> toByteList(byte[] array) {
+			List<Byte> byteList = new ArrayList<Byte>(array.length);
+			for (int i = 0; i < array.length; i++) {
+				byteList.add(array[i]);
+			}
+			return byteList;
+		}
 	}
 	
-	private class ErrorHandler implements Consumer<IOException> {
+	private class ErrorHandler implements Consumer<Throwable> {
 		private String socketKey;
 		public ErrorHandler(String socketKey) {
 			this.socketKey = socketKey;
 		}
 		@Override
-		public void accept(IOException exception) {
+		public void accept(Throwable exception) {
 			try {
 				JSONObject event = new JSONObject();
 				event.put("type", "Error");
