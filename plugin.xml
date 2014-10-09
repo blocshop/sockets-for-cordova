@@ -30,19 +30,22 @@
 		
     </platform>
     
-    <!-- ios
+    <!-- ios -->
     <platform name="ios">    
         <config-file target="config.xml" parent="/*">
-            <feature name="InAppBrowser">
-                <param name="ios-package" value="CDVInAppBrowser" /> 
+            <feature name="SocketsForCordova">
+                <param name="ios-package" value="SocketPlugin" />
             </feature>
         </config-file>
 
-        <header-file src="src/ios/CDVInAppBrowser.h" />
-	    <source-file src="src/ios/CDVInAppBrowser.m" />
-	    
-	    <framework src="CoreGraphics.framework" />
-    </platform> -->
+        <header-file src="src/ios/SocketsForCordova/Classes/SocketPlugin.h" />
+	    <source-file src="src/ios/SocketsForCordova/Classes/SocketPlugin.m" />
+
+        <header-file src="src/ios/SocketsForCordova/Classes/SocketAdapter.h" />
+        <source-file src="src/ios/SocketsForCordova/Classes/SocketAdapter.m" />
+
+	    <!--<framework src="CoreGraphics.framework" />-->
+    </platform>
 
 
     <!-- wp8 -->
