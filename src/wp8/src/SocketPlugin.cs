@@ -59,6 +59,12 @@ namespace Blocshop.ScoketsForCordova
             catch (SocketException ex)
             {
                 this.DispatchCommandResult(new PluginResult(PluginResult.Status.IO_EXCEPTION, ex.Message));
+                socketStorage.Remove(socketKey);
+            }
+            catch (AggregateException ex)
+            {
+                this.DispatchCommandResult(new PluginResult(PluginResult.Status.IO_EXCEPTION, ex.InnerException.Message));
+                socketStorage.Remove(socketKey);
             }
         }
 
