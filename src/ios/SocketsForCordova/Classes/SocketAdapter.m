@@ -20,11 +20,18 @@ NSOutputStream *outputStream;
     
     inputStream = (__bridge NSInputStream *)readStream;
     [inputStream setDelegate:self];
-    [inputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+    //[inputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
     [inputStream open];
     
     outputStream = (__bridge NSOutputStream *)writeStream;
     [outputStream open];
+    
+    [self performSelectorOnMainThread:@selector(runReadLoop) withObject:nil waitUntilDone:NO];
+}
+
+
+- (void)runReadLoop {
+    [inputStream scheduleInRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
 }
 
 - (void)close {

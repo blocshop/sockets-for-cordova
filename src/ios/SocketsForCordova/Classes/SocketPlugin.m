@@ -69,6 +69,7 @@
     [self.commandDelegate runInBackground:^{
         @try {
             [socket connect:host port:port];
+            
             [self.commandDelegate
              sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
              callbackId:command.callbackId];
