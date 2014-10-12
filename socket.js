@@ -104,17 +104,30 @@ Socket._copyToArray = function(array) {
     return outputArray;
 };
 
+Socket.prototype.shutdownWrite = function () {
+    exec(
+         function() {
+         console.debug("SocketsForCordova: Shutdown write successfully called.");
+         },
+         function(errorMessage) {
+         console.error("SocketsForCordova: Error when call shutdownWrite on socket. Error: " + errorMessage);
+         },
+         CORDOVA_SERVICE_NAME,
+         "shutdownWrite",
+         [ this.socketKey ]);
+};
+
 Socket.prototype.close = function () {
     exec(
-        function() {
-            console.debug("SocketsForCordova: Close successfully closed.");
-        },
-        function(errorMessage) {
-            console.error("SocketsForCordova: Error when call close on socket. Error: " + errorMessage);
-        },
-        CORDOVA_SERVICE_NAME,
-        "close",
-        [ this.socketKey ]);
+         function() {
+         console.debug("SocketsForCordova: Close successfully called.");
+         },
+         function(errorMessage) {
+         console.error("SocketsForCordova: Error when call close on socket. Error: " + errorMessage);
+         },
+         CORDOVA_SERVICE_NAME,
+         "close",
+         [ this.socketKey ]);
 };
 
 Socket.dispatchEvent = function(event) {
