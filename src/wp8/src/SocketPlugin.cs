@@ -58,11 +58,13 @@ namespace Blocshop.ScoketsForCordova
             }
             catch (SocketException ex)
             {
+                this.ErrorHandler(socketKey, ex);
                 this.DispatchCommandResult(new PluginResult(PluginResult.Status.IO_EXCEPTION, ex.Message));
                 socketStorage.Remove(socketKey);
             }
             catch (AggregateException ex)
             {
+                this.ErrorHandler(socketKey, ex.InnerException);
                 this.DispatchCommandResult(new PluginResult(PluginResult.Status.IO_EXCEPTION, ex.InnerException.Message));
                 socketStorage.Remove(socketKey);
             }
@@ -85,6 +87,15 @@ namespace Blocshop.ScoketsForCordova
             {
                 this.DispatchCommandResult(new PluginResult(PluginResult.Status.IO_EXCEPTION, ex.Message));
             }
+        }
+
+        public void shutdownWrite(string parameters)
+        {
+            string socketKey = JsonHelper.Deserialize<string[]>(parameters)[0];
+
+            ISocketAdapter socket = this.socketStorage.Get(socketKey);
+
+            socket.ShutdownWrite();
         }
 
         public void close(string parameters)

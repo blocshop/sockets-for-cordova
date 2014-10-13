@@ -12,6 +12,7 @@ namespace Blocshop.ScoketsForCordova
     {
         Task Connect(String host, int port);
         Task Write(byte[] data);
+        void ShutdownWrite();
         void Close();
         SocketAdapterOptions Options { set; }
         Action<byte[]> DataConsumer { set; }
@@ -55,9 +56,14 @@ namespace Blocshop.ScoketsForCordova
             await this.socket.SendTaskAsync(socketAsyncEventArgs);
         }
 
-        public void Close()
+        public void ShutdownWrite()
         {
             this.socket.Shutdown(SocketShutdown.Send);
+        }
+
+        public void Close()
+        {
+            this.socket.Close();
         }
 
         private void StartReadTask()
