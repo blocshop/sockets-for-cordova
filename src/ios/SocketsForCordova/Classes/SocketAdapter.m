@@ -152,17 +152,17 @@ BOOL wasOpenned = FALSE;
         case NSStreamEventErrorOccurred:
         {
             NSLog(@"Stream event error: %@", [[stream streamError] localizedDescription]);
-                
+            
+            [self close];
+            
             if (wasOpenned) {
                 self.errorEventHandler([[stream streamError] localizedDescription]);
                 self.closeEventHandler(TRUE);
             }
             else {
-                self.openErrorEventHandler([[stream streamError] localizedDescription]);
                 self.errorEventHandler([[stream streamError] localizedDescription]);
+                self.openErrorEventHandler([[stream streamError] localizedDescription]);
             }
-                
-            [self close];
             break;
         }
         default: {
