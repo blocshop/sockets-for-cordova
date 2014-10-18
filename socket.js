@@ -10,9 +10,54 @@ function Socket() {
     this.socketKey = guid();
 }
 
-Socket.create = function(callback) {
+//Socket.create = function(/*callback*/) {
+//
+//    var socket = new Socket();
+//
+//    function socketEventHandler(event) {
+//
+//        var payload = event.payload;
+//
+//        if (payload.socketKey !== socket.socketKey) {
+//            return;
+//        }
+//
+//        switch(payload.type) {
+//            case "Close":
+//                console.debug("SocketsForCordova: Close event, socket key: " + payload.socketKey);
+//                window.document.removeEventListener(SOCKET_EVENT, socketEventHandler);
+//                socket.onClose();
+//                break;
+//            case "DataReceived":
+//                console.debug("SocketsForCordova: DataReceived event, socket key: " + payload.socketKey);
+//                socket.onData(new Int8Array(payload.data));
+//                break;
+//            case "Error":
+//                console.debug("SocketsForCordova: Error event, socket key: " + payload.socketKey);
+//                socket.onError(payload.errorMessage);
+//                break;
+//            default:
+//                console.error("SocketsForCordova: Unknown event type " + payload.type + ", socket key: " + payload.socketKey);
+//                break;
+//        }
+//    }
+//
+//    window.document.addEventListener(SOCKET_EVENT, socketEventHandler);
+//
+//    exec(
+//        function() {
+//            console.debug("SocketsForCordova: Socket object successfully constructed.");
+//            callback(socket);
+//        },
+//        function(error) {
+//            console.error("SocketsForCordova: Unexpected error during constructing Socket object. Error: " + error);
+//        },
+//        CORDOVA_SERVICE_NAME,
+//        "create",
+//        [ socket.socketKey ]);
+//};
 
-    var socket = new Socket();
+Socket.prototype.open = function (host, port, success, error) {
 
     function socketEventHandler(event) {
 
@@ -42,35 +87,20 @@ Socket.create = function(callback) {
         }
     }
 
-    window.document.addEventListener(SOCKET_EVENT, socketEventHandler);
-
     exec(
         function() {
-            console.debug("SocketsForCordova: Socket object successfully constructed.");
-            callback(socket);
-        },
-        function(error) {
-            console.error("SocketsForCordova: Unexpected error during constructing Socket object. Error: " + error);
-        },
-        CORDOVA_SERVICE_NAME,
-        "create",
-        [ socket.socketKey ]);
-};
-
-Socket.prototype.connect = function (host, port, success, error) {
-    exec(
-        function() {
-            console.debug("SocketsForCordova: Socket successfully connected.");
+            console.debug("SocketsForCordova: Socket successfully opened.");
+            window.document.addEventListener(SOCKET_EVENT, socketEventHandler);
             if (success)
                 success();
         },
         function(errorMessage) {
-            console.error("SocketsForCordova: Error during socket connecting. Error: " + errorMessage);
+            console.error("SocketsForCordova: Error during opening socket. Error: " + errorMessage);
             if (error)
                 error(errorMessage);
         },
         CORDOVA_SERVICE_NAME,
-        "connect",
+        "open",
         [ this.socketKey, host, port ]);
 };
 

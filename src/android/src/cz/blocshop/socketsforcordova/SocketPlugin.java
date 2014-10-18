@@ -1,13 +1,11 @@
 package cz.blocshop.socketsforcordova;
 
-import android.annotation.SuppressLint;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
 import org.apache.cordova.CordovaPlugin;
@@ -15,6 +13,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.annotation.SuppressLint;
 
 public class SocketPlugin extends CordovaPlugin {
 	
@@ -23,12 +22,12 @@ public class SocketPlugin extends CordovaPlugin {
 	@Override
 	public boolean execute(String action, CordovaArgs args, CallbackContext callbackContext) throws JSONException {
 
-		if(action.equals("create")) {
-			this.create(args, callbackContext);
-		} else if (action.equals("connect")) {
-			this.connect(args, callbackContext);
+		if (action.equals("open")) {
+			this.open(args, callbackContext);
 		} else if (action.equals("write")) {
 			this.write(args, callbackContext);
+		} else if (action.equals("shutdownWrite")) {
+			this.shutdownWrite(args, callbackContext);
 		} else if (action.equals("close")) {
 			this.close(args, callbackContext);
 		} else if (action.equals("setOptions")) {
@@ -40,29 +39,19 @@ public class SocketPlugin extends CordovaPlugin {
 		return true;
 	}
 	
-	private void create(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
-		
-		final String socketKey = args.getString(0);
+	private void open(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
+		String socketKey = args.getString(0);
+		String host = args.getString(1);
+		int port = args.getInt(2);
 		
 		SocketAdapter socketAdapter = new SocketAdapterImpl();
 		socketAdapter.setCloseEventHandler(new CloseEventHandler(socketKey));
 		socketAdapter.setDataConsumer(new DataConsumer(socketKey));
 		socketAdapter.setErrorHandler(new ErrorHandler(socketKey));
-			
-		this.socketAdapters.put(socketKey, socketAdapter);
-		
-		callbackContext.success(socketKey);
-	}
-	
-	private void connect(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
-		String socketKey = args.getString(0);
-		String host = args.getString(1);
-		int port = args.getInt(2);
-		
-		SocketAdapter socket = this.getSocketAdapter(socketKey);
 		
 		try {
-			socket.connect(host, port);
+			socketAdapter.open(host, port);
+			this.socketAdapters.put(socketKey, socketAdapter);
 			callbackContext.success();
 		} catch (Throwable t) {
 			callbackContext.error(t.toString());
@@ -82,6 +71,19 @@ public class SocketPlugin extends CordovaPlugin {
 		
 		try {
 			socket.write(dataBuffer);
+			callbackContext.success();
+		} catch (IOException e) {
+			callbackContext.error(e.toString());
+		}
+	}
+
+	private void shutdownWrite(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
+		String socketKey = args.getString(0);
+		
+		SocketAdapter socket = this.getSocketAdapter(socketKey);
+		
+		try {
+			socket.shutdownWrite();
 			callbackContext.success();
 		} catch (IOException e) {
 			callbackContext.error(e.toString());
@@ -135,8 +137,7 @@ public class SocketPlugin extends CordovaPlugin {
 	
 	private SocketAdapter getSocketAdapter(String socketKey) {
 		if (!this.socketAdapters.containsKey(socketKey)) {
-			throw new IllegalArgumentException(
-					String.format("Cannot find socketKey: %s. Connection is probably closed.", socketKey));
+			throw new IllegalStateException("Socket isn't connected.");
 		}
 		return this.socketAdapters.get(socketKey);
 	}
@@ -197,17 +198,17 @@ public class SocketPlugin extends CordovaPlugin {
 		}
 	}
 	
-	private class ErrorHandler implements Consumer<Throwable> {
+	private class ErrorHandler implements Consumer<String> {
 		private String socketKey;
 		public ErrorHandler(String socketKey) {
 			this.socketKey = socketKey;
 		}
 		@Override
-		public void accept(Throwable exception) {
+		public void accept(String errorMessage) {
 			try {
 				JSONObject event = new JSONObject();
 				event.put("type", "Error");
-				event.put("errorMessage", exception.toString());
+				event.put("errorMessage", errorMessage);
 				event.put("socketKey", socketKey);
 				
 				dispatchEvent(event);

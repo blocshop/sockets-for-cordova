@@ -1,7 +1,6 @@
 package cz.blocshop.socketsforcordova;
 
 import java.io.IOException;
-import java.io.InvalidObjectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -19,7 +18,7 @@ public class SocketAdapterImpl implements SocketAdapter {
     
     private Consumer<byte[]> dataConsumer;
     private Consumer<Boolean> closeEventHandler;
-    private Consumer<Throwable> exceptionHandler;
+    private Consumer<String> exceptionHandler;
     
     private ExecutorService executor;
 
@@ -29,8 +28,8 @@ public class SocketAdapterImpl implements SocketAdapter {
     }
 
     @Override
-    public void connect(String host, int port) throws Throwable {
-    	this.connectSocket(host, port);
+    public void open(String host, int port) throws Throwable {
+    	this.openWithBackgroundThread(host, port);
         this.submitReadTask();
     }
     
@@ -40,10 +39,13 @@ public class SocketAdapterImpl implements SocketAdapter {
     }
 
     @Override
+    public void shutdownWrite() throws IOException {
+    	this.socket.shutdownOutput();
+    }
+    
+    @Override
     public void close() throws IOException {
-    	if (!this.socket.isClosed()) {
-    		this.socket.shutdownOutput();
-    	}
+    	this.socket.close();
     }
 
     @Override
@@ -82,24 +84,25 @@ public class SocketAdapterImpl implements SocketAdapter {
     }
 
     @Override
-    public void setErrorHandler(Consumer<Throwable> exceptionHandler) {
+    public void setErrorHandler(Consumer<String> exceptionHandler) {
         this.exceptionHandler = exceptionHandler;
     }
     
-    private void connectSocket(final String host, final int port) throws Throwable {
-        Future future = this.executor.submit(new Runnable() {
+    private void openWithBackgroundThread(final String host, final int port) throws Throwable {
+        Future<?> future = this.executor.submit(new Runnable() {
             @Override
             public void run() {
                 try {
 					socket.connect(new InetSocketAddress(host, port));
 				} catch (IOException e) {
-					Logging.Error(SocketAdapterImpl.class.getName(), "Error during connecting of socket", e);
+					Logging.Error(SocketAdapterImpl.class.getName(), "Error during connecting of socket", e.getCause());
+					throw new RuntimeException(e);
 				}
             }
         });
         
         try {
-			Object result = future.get();
+			future.get();
         } 
         catch (ExecutionException e) {
 			throw e.getCause();
@@ -122,7 +125,7 @@ public class SocketAdapterImpl implements SocketAdapter {
         } catch (Throwable e) {
         	Logging.Error(SocketAdapterImpl.class.getName(), "Error during reading of socket input stream", e);
             hasError = true;
-            invokeExceptionHandler(e);
+            invokeExceptionHandler(e.getMessage());
         } finally {
             try {
                 socket.close();
@@ -159,9 +162,9 @@ public class SocketAdapterImpl implements SocketAdapter {
         }
     }
     
-    private void invokeExceptionHandler(Throwable exception) {
+    private void invokeExceptionHandler(String errorMessage) {
         if (this.exceptionHandler != null) {
-            this.exceptionHandler.accept(exception);
+            this.exceptionHandler.accept(errorMessage);
         }
     }
 }
