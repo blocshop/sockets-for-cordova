@@ -29,7 +29,7 @@ Socket.prototype.open = function (host, port, success, error) {
                 break;
             case "DataReceived":
                 //console.debug("SocketsForCordova: DataReceived event, socket key: " + payload.socketKey);
-                _that.onData(new Int8Array(payload.data));
+                _that.onData(new Uint8Array(payload.data));
                 break;
             case "Error":
                 //console.debug("SocketsForCordova: Error event, socket key: " + payload.socketKey);
@@ -60,7 +60,7 @@ Socket.prototype.open = function (host, port, success, error) {
 
 Socket.prototype.write = function (data, success, error) {
 
-    var dataToWrite = data instanceof Int8Array
+    var dataToWrite = data instanceof Uint8Array
         ? Socket._copyToArray(data)
         : data;
 
