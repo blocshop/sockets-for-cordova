@@ -5,15 +5,6 @@
 
 @implementation SocketPlugin : CDVPlugin
 
-- (void) create : (CDVInvokedUrlCommand*) command {
-    //NSString* socketKey = [command.arguments objectAtIndex : 0];
-	
-    
-	[self.commandDelegate
-     sendPluginResult: [CDVPluginResult resultWithStatus : CDVCommandStatus_OK]
-     callbackId: command.callbackId];
-}
-
 - (void) connect : (CDVInvokedUrlCommand*) command {
     
 	NSString *socketKey = [command.arguments objectAtIndex:0];

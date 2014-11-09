@@ -37,7 +37,6 @@ BOOL wasOpenned = FALSE;
     [inputStream open];
     
     outputStream = (__bridge NSOutputStream *)writeStream;
-    //[outputStream setDelegate:self];
     [outputStream open];
 
     [self performSelectorOnMainThread:@selector(runReadLoop) withObject:nil waitUntilDone:NO];
@@ -125,13 +124,11 @@ BOOL wasOpenned = FALSE;
         case NSStreamEventHasBytesAvailable: {
             if(stream == inputStream) {
                 uint8_t buf[65535];
-                unsigned int len = 0;
-                
-                len = [inputStream read:buf maxLength:65535];
-                NSLog(@"%d", len);
+                long len = [inputStream read:buf maxLength:65535];
+
                 if(len > 0) {
                     NSMutableArray *dataArray = [[NSMutableArray alloc] init];
-                    for (int i = 0; i < len; i++) {
+                    for (long i = 0; i < len; i++) {
                         
                         [dataArray addObject:[NSNumber numberWithUnsignedChar:buf[i]]];
                     }
@@ -184,6 +181,7 @@ BOOL wasOpenned = FALSE;
 }
 
 - (void)close {
+    self.closeEventHandler(FALSE);
     [self closeOutputStream];
     [self closeInputStream];
 }
