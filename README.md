@@ -47,5 +47,5 @@ Closes the connection. `onClose` event handler is called when closing of socket 
 
 | parameter   | type          | description |
 | ----------- |-----------------------------|--------------|
-| `onSuccess` | `() => void`                | Success callback, called after connection was successfully closed. `onClose` event handler is called after that callback. (optional)|
+| `onSuccess` | `() => void`                | Success callback, called after connection was successfully closed. `onClose` event handler is called before that callback. (optional)|
 | `onError`   | `(message: string) => void` | Error callback, called when some error occurs during this procedure. (optional)|
