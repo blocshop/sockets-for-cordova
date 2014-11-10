@@ -63,6 +63,7 @@ namespace Blocshop.ScoketsForCordova
 
         public void Close()
         {
+            this.CloseEventHandler(false);
             this.socket.Close();
         }
 
