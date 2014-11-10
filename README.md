@@ -5,8 +5,8 @@ Cordova plugin for socket network communication
 
 ## API
 ### Event handlers
-#### `onData: (data: Int8Array) => void`
-Called when new batch of data was send from server to client. Data are represented as typed array of bytes (`Int8Array`).
+#### `onData: (data: Uint8Array) => void`
+Called when new batch of data was send from server to client. Data are represented as typed array of bytes (`Uint8Array`).
 
 #### `onClose: (hasError: boolean) => void`
 Called after connection was successfully closed. Parameter `hasError` indicates whether connection was closed as a result of some error.
@@ -30,7 +30,7 @@ Sends data to the remote host.
 
 | parameter   | type          | description |
 | ----------- |-----------------------------|--------------|
-| `data`      | `Int8Array`                 | Typed array of bytes to be written to the output stream |
+| `data`      | `Uint8Array`                 | Typed array of bytes to be written to the output stream |
 | `onSuccess` | `() => void`                | Success callback, called after data are successfully written to the output stream. (optional)|
 | `onError`   | `(message: string) => void` | Error callback, called when some error occurs during writing of data to the output stream. (optional)|
 
