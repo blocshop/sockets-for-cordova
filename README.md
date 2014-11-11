@@ -6,7 +6,7 @@ Cordova plugin for socket network communication
 ## API
 ### Event handlers
 #### `onData: (data: Uint8Array) => void`
-Called when new batch of data was send from server to client. Data are represented as typed array of bytes (`Uint8Array`).
+Called when new batch of data was received by the client. Data are represented as typed array of bytes (`Uint8Array`).
 
 #### `onClose: (hasError: boolean) => void`
 Called after connection was successfully closed. Parameter `hasError` indicates whether connection was closed as a result of some error.
@@ -22,30 +22,30 @@ Establishes connection with the remote host.
 | ----------- |-----------------------------|--------------|
 | `host`      | `string`                    | Remote host/ip address |
 | `port`      | `number`                    | Tcp port number |
-| `onSuccess` | `() => void`                | Success callback, called after successfull connection to the remote host. (optional)|
-| `onError`   | `(message: string) => void` | Error callback, called when some error occurs during connecting to the remote host. (optional)|
+| `onSuccess` | `() => void`                | Success callback - called after successfull connection to the remote host. (optional)|
+| `onError`   | `(message: string) => void` | Error callback - called when some error occurs during connecting to the remote host. (optional)|
 
 #### `write(data, onSuccess?, onError?): void`
-Sends data to the remote host.
+Sends data to remote host.
 
 | parameter   | type          | description |
 | ----------- |-----------------------------|--------------|
-| `data`      | `Uint8Array`                 | Typed array of bytes to be written to the output stream |
-| `onSuccess` | `() => void`                | Success callback, called after data are successfully written to the output stream. (optional)|
-| `onError`   | `(message: string) => void` | Error callback, called when some error occurs during writing of data to the output stream. (optional)|
+| `data`      | `Uint8Array`                | Typed array of bytes, that will be written to output stream. |
+| `onSuccess` | `() => void`                | Success callback - called after data are successfully written to the output stream. (optional)|
+| `onError`   | `(message: string) => void` | Error callback - called when some error occurs during writing of data to the output stream. (optional)|
 
 #### `shutdownWrite(onSuccess?, onError?): void`
-Finishes sending of data by sending `FIN` to remote host.  If you call `write` after invoking `shutdownWrite`, callback `onError` (of `write` method) will be called.
+Sends `FIN` to remote host and finishes data sending. You cannot call `write` method after you call `shutdownWrite`, otherwise `onError` callback (of `write` method) will be called.
 
 | parameter   | type          | description |
 | ----------- |-----------------------------|--------------|
-| `onSuccess` | `() => void`                | Success callback, called after sending of all data is finished. (optional)|
-| `onError`   | `(message: string) => void` | Error callback, called when some error occurs during this procedure. (optional)|
+| `onSuccess` | `() => void`                | Success callback - called after sending of data is finished. (optional)|
+| `onError`   | `(message: string) => void` | Error callback - called when some error occurs during this procedure. (optional)|
 
 #### `close(onSuccess?, onError?): void`
-Closes the connection. `onClose` event handler is called when closing of socket was succesfull.
+Closes the connection. `onClose` event handler is called when connection is successfuly closed.
 
 | parameter   | type          | description |
 | ----------- |-----------------------------|--------------|
-| `onSuccess` | `() => void`                | Success callback, called after connection was successfully closed. `onClose` event handler is called before that callback. (optional)|
+| `onSuccess` | `() => void`                | Success callback, called after connection is successfully closed. `onClose` event handler is called before that callback. (optional)|
 | `onError`   | `(message: string) => void` | Error callback, called when some error occurs during this procedure. (optional)|
