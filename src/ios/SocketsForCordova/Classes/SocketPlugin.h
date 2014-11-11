@@ -4,7 +4,6 @@
     NSMutableDictionary *socketAdapters;
 }
 
--(void) create: (CDVInvokedUrlCommand *) command;
 -(void) connect: (CDVInvokedUrlCommand *) command;
 -(void) write: (CDVInvokedUrlCommand *) command;
 -(void) close: (CDVInvokedUrlCommand *) command;

@@ -21,54 +21,36 @@ namespace Blocshop.ScoketsForCordova
             this.socketStorage = SocketStorage.CreateSocketStorage();
         }
 
-        public void create(string parameters)
-        {
-            string socketKey = JsonHelper.Deserialize<string[]>(parameters)[0];
-
-            ISocketAdapter socketAdapter = new SocketAdapter();
-            socketAdapter.CloseEventHandler = (hasError) => this.CloseEventHandler(socketKey, hasError);
-            socketAdapter.DataConsumer = (data) => this.DataConsumer(socketKey, data);
-            socketAdapter.ErrorHandler = (ex) => this.ErrorHandler(socketKey, ex);
-
-            this.socketStorage.Add(socketKey, socketAdapter);
-
-            this.DispatchCommandResult(new PluginResult(PluginResult.Status.OK));
-        }
-
-        public void registerWPEventDispatcher(string parameters)
-        {
-            this.eventDispatcherCallbackId = this.CurrentCommandCallbackId;
-            PluginResult result = new PluginResult(PluginResult.Status.OK);
-            result.KeepCallback = true;
-            DispatchCommandResult(result, this.eventDispatcherCallbackId);
-        }
-
         public void connect(string parameters)
         {
             string socketKey = JsonHelper.Deserialize<string[]>(parameters)[0];
             string host = JsonHelper.Deserialize<string[]>(parameters)[1];
             int port = int.Parse(JsonHelper.Deserialize<string[]>(parameters)[2]);
 
-            ISocketAdapter socket = this.socketStorage.Get(socketKey);
+            ISocketAdapter socketAdapter = new SocketAdapter();
+            socketAdapter.CloseEventHandler = (hasError) => this.CloseEventHandler(socketKey, hasError);
+            socketAdapter.DataConsumer = (data) => this.DataConsumer(socketKey, data);
+            socketAdapter.ErrorHandler = (ex) => this.ErrorHandler(socketKey, ex);
+
             try
             {
-                socket.Connect(host, port).Wait();
+                socketAdapter.Connect(host, port).Wait();
+
+                this.socketStorage.Add(socketKey, socketAdapter);
 
                 this.DispatchCommandResult(new PluginResult(PluginResult.Status.OK));
             }
             catch (SocketException ex)
             {
                 this.DispatchCommandResult(new PluginResult(PluginResult.Status.IO_EXCEPTION, ex.Message));
-                socketStorage.Remove(socketKey);
             }
             catch (AggregateException ex)
             {
                 this.DispatchCommandResult(new PluginResult(PluginResult.Status.IO_EXCEPTION, ex.InnerException.Message));
-                socketStorage.Remove(socketKey);
             }
         }
 
-        public void write(string parameters/*, string socketKey, byte[] data*/)
+        public void write(string parameters)
         {
             string socketKey = JsonHelper.Deserialize<string[]>(parameters)[0];
             string dataJsonArray = JsonHelper.Deserialize<string[]>(parameters)[1];
@@ -87,6 +69,15 @@ namespace Blocshop.ScoketsForCordova
             }
         }
 
+        public void shutdownWrite(string parameters)
+        {
+            string socketKey = JsonHelper.Deserialize<string[]>(parameters)[0];
+
+            ISocketAdapter socket = this.socketStorage.Get(socketKey);
+
+            socket.ShutdownWrite();
+        }
+
         public void close(string parameters)
         {
             string socketKey = JsonHelper.Deserialize<string[]>(parameters)[0];
@@ -94,6 +85,14 @@ namespace Blocshop.ScoketsForCordova
             ISocketAdapter socket = this.socketStorage.Get(socketKey);
 
             socket.Close();
+        }
+
+        public void registerWPEventDispatcher(string parameters)
+        {
+            this.eventDispatcherCallbackId = this.CurrentCommandCallbackId;
+            PluginResult result = new PluginResult(PluginResult.Status.OK);
+            result.KeepCallback = true;
+            DispatchCommandResult(result, this.eventDispatcherCallbackId);
         }
 
         //private void setOptions(CordovaArgs args, CallbackContext callbackContext) throws JSONException {

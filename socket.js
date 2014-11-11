@@ -10,31 +10,30 @@ function Socket() {
     this.socketKey = guid();
 }
 
-Socket.create = function(callback) {
+Socket.prototype.open = function (host, port, success, error) {
 
-    var socket = new Socket();
-
+    var _that = this;
     function socketEventHandler(event) {
 
         var payload = event.payload;
 
-        if (payload.socketKey !== socket.socketKey) {
+        if (payload.socketKey !== _that.socketKey) {
             return;
         }
 
         switch(payload.type) {
             case "Close":
-                console.debug("SocketsForCordova: Close event, socket key: " + payload.socketKey);
+                //console.debug("SocketsForCordova: Close event, socket key: " + payload.socketKey);
                 window.document.removeEventListener(SOCKET_EVENT, socketEventHandler);
-                socket.onClose();
+                _that.onClose();
                 break;
             case "DataReceived":
-                console.debug("SocketsForCordova: DataReceived event, socket key: " + payload.socketKey);
-                socket.onData(new Int8Array(payload.data));
+                //console.debug("SocketsForCordova: DataReceived event, socket key: " + payload.socketKey);
+                _that.onData(new Uint8Array(payload.data));
                 break;
             case "Error":
-                console.debug("SocketsForCordova: Error event, socket key: " + payload.socketKey);
-                socket.onError(payload.errorMessage);
+                //console.debug("SocketsForCordova: Error event, socket key: " + payload.socketKey);
+                _that.onError(payload.errorMessage);
                 break;
             default:
                 console.error("SocketsForCordova: Unknown event type " + payload.type + ", socket key: " + payload.socketKey);
@@ -42,52 +41,37 @@ Socket.create = function(callback) {
         }
     }
 
-    window.document.addEventListener(SOCKET_EVENT, socketEventHandler);
-
     exec(
         function() {
-            console.debug("SocketsForCordova: Socket object successfully constructed.");
-            callback(socket);
-        },
-        function(error) {
-            console.error("SocketsForCordova: Unexpected error during constructing Socket object. Error: " + error);
-        },
-        CORDOVA_SERVICE_NAME,
-        "create",
-        [ socket.socketKey ]);
-};
-
-Socket.prototype.connect = function (host, port, success, error) {
-    exec(
-        function() {
-            console.debug("SocketsForCordova: Socket successfully connected.");
+            //console.debug("SocketsForCordova: Socket successfully opened.");
+            window.document.addEventListener(SOCKET_EVENT, socketEventHandler);
             if (success)
                 success();
         },
         function(errorMessage) {
-            console.error("SocketsForCordova: Error during socket connecting. Error: " + errorMessage);
+            //console.error("SocketsForCordova: Error during opening socket. Error: " + errorMessage);
             if (error)
                 error(errorMessage);
         },
         CORDOVA_SERVICE_NAME,
-        "connect",
+        "open",
         [ this.socketKey, host, port ]);
 };
 
 Socket.prototype.write = function (data, success, error) {
 
-    var dataToWrite = data instanceof Int8Array
+    var dataToWrite = data instanceof Uint8Array
         ? Socket._copyToArray(data)
         : data;
 
     exec(
         function() {
-            console.debug("SocketsForCordova: Data successfully written to socket. Number of bytes: " + data.length);
+            //console.debug("SocketsForCordova: Data successfully written to socket. Number of bytes: " + data.length);
             if (success)
                 success();
         },
         function(errorMessage) {
-            console.error("SocketsForCordova: Error during writing data to socket. Error: " + errorMessage);
+            //console.error("SocketsForCordova: Error during writing data to socket. Error: " + errorMessage);
             if (error)
                 error(errorMessage);
         },
@@ -104,13 +88,17 @@ Socket._copyToArray = function(array) {
     return outputArray;
 };
 
-Socket.prototype.shutdownWrite = function () {
+Socket.prototype.shutdownWrite = function (success, error) {
     exec(
          function() {
-         console.debug("SocketsForCordova: Shutdown write successfully called.");
+            //console.debug("SocketsForCordova: Shutdown write successfully called.");
+             if (success)
+                 success();
          },
          function(errorMessage) {
-         console.error("SocketsForCordova: Error when call shutdownWrite on socket. Error: " + errorMessage);
+            //console.error("SocketsForCordova: Error when call shutdownWrite on socket. Error: " + errorMessage);
+             if (error)
+                 error(errorMessage);
          },
          CORDOVA_SERVICE_NAME,
          "shutdownWrite",
@@ -120,10 +108,14 @@ Socket.prototype.shutdownWrite = function () {
 Socket.prototype.close = function () {
     exec(
          function() {
-         console.debug("SocketsForCordova: Close successfully called.");
+             //console.debug("SocketsForCordova: Close successfully called.");
+             if (success)
+                 success();
          },
          function(errorMessage) {
-         console.error("SocketsForCordova: Error when call close on socket. Error: " + errorMessage);
+             //console.error("SocketsForCordova: Error when call close on socket. Error: " + errorMessage);
+             if (error)
+                 error(errorMessage);
          },
          CORDOVA_SERVICE_NAME,
          "close",

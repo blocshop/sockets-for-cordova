@@ -5,11 +5,12 @@ import java.net.SocketException;
 
 
 public interface SocketAdapter {
-	public void connect(String host, int port) throws Throwable;
+	public void open(String host, int port) throws Throwable;
 	public void write(byte[] data) throws IOException;
+	public void shutdownWrite() throws IOException;
 	public void close() throws IOException;	
 	public void setOptions(SocketAdapterOptions options) throws SocketException;
 	public void setDataConsumer(Consumer<byte[]> dataConsumer);
 	public void setCloseEventHandler(Consumer<Boolean> closeEventHandler);
-	public void setErrorHandler(Consumer<Throwable> errorHandler);
+	public void setErrorHandler(Consumer<String> errorHandler);
 }
