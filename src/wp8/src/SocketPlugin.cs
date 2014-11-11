@@ -21,7 +21,7 @@ namespace Blocshop.ScoketsForCordova
             this.socketStorage = SocketStorage.CreateSocketStorage();
         }
 
-        public void connect(string parameters)
+        public void open(string parameters)
         {
             string socketKey = JsonHelper.Deserialize<string[]>(parameters)[0];
             string host = JsonHelper.Deserialize<string[]>(parameters)[1];
