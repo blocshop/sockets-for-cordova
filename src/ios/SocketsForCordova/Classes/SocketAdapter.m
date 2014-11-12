@@ -13,7 +13,7 @@ BOOL wasOpenned = FALSE;
 
 @implementation SocketAdapter
 
-- (void)connect:(NSString *)host port:(NSNumber*)port {
+- (void)open:(NSString *)host port:(NSNumber*)port {
     
     NSLog(@"Setting up connection to %@ : %@", host, [port stringValue]);
     
@@ -150,8 +150,6 @@ BOOL wasOpenned = FALSE;
         {
             NSLog(@"Stream event error: %@", [[stream streamError] localizedDescription]);
             
-            [self close];
-            
             if (wasOpenned) {
                 self.errorEventHandler([[stream streamError] localizedDescription]);
                 self.closeEventHandler(TRUE);
@@ -160,6 +158,7 @@ BOOL wasOpenned = FALSE;
                 self.errorEventHandler([[stream streamError] localizedDescription]);
                 self.openErrorEventHandler([[stream streamError] localizedDescription]);
             }
+            //[self closeStreams];
             break;
         }
         default: {
@@ -182,6 +181,10 @@ BOOL wasOpenned = FALSE;
 
 - (void)close {
     self.closeEventHandler(FALSE);
+    [self closeStreams];
+}
+
+- (void)closeStreams {
     [self closeOutputStream];
     [self closeInputStream];
 }

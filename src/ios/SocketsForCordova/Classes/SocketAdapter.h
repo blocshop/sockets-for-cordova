@@ -4,7 +4,7 @@
 @public
 }
 
-- (void)connect:(NSString *)host port:(NSNumber*)port;
+- (void)open:(NSString *)host port:(NSNumber*)port;
 - (void)write:(NSArray *)dataArray;
 - (void)shutdownWrite;
 - (void)close;
