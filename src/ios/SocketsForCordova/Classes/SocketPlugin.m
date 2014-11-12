@@ -5,7 +5,7 @@
 
 @implementation SocketPlugin : CDVPlugin
 
-- (void) connect : (CDVInvokedUrlCommand*) command {
+- (void) open : (CDVInvokedUrlCommand*) command {
     
 	NSString *socketKey = [command.arguments objectAtIndex:0];
 	NSString *host = [command.arguments objectAtIndex:1];
@@ -59,7 +59,7 @@
     
     [self.commandDelegate runInBackground:^{
         @try {
-            [socketAdapter connect:host port:port];
+            [socketAdapter open:host port:port];
         }
         @catch (NSException *e) {
             [self.commandDelegate
