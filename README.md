@@ -12,7 +12,7 @@ Install this plugin simply by:
 
 or you can use GIT repository for most recent version:
 
-`cordova plugin add https://github.com/blocshop/sockets-for-cordova.git`
+`cordova plugin add https://github.com/blocshop/sockets-for-cordova`
 
 ## Sample usage
 TODO
