@@ -4,6 +4,16 @@ This Cordova plugin provides JavaScript API, that allows you to communicate with
 
 Currently we support these platforms: iOS, Android, WP8.
 
+## Installation
+
+Install this plugin simply by:
+
+`cordova plugin add cz.blocshop.socketsforcordova`
+
+or you can use GIT repository for most recent version:
+
+`cordova plugin add https://github.com/blocshop/sockets-for-cordova.git`
+
 ## Sample usage
 TODO
 
