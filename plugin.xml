@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="cz.blocshop.socketsforcordova" version="0.1.0">
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="cz.blocshop.socketsforcordova" version="0.2.0">
     <name>SocketsForCordova</name>
-    <description>Cordova plugin for socket communication</description>
+    <description>
+		This Cordova plugin provides JavaScript API, that allows you to communicate with server through TCP protocol.
+		Currently we support these platforms: iOS, Android, WP8.
+	</description>
     <license>Apache 2.0</license>
-    <keywords>cordova,sockets,socket</keywords>
-
+    <keywords>socket,sockets,network,tcp,cordova</keywords>
 
     <js-module src="socket.js" name="Socket">
         <clobbers target="window.Socket" />
