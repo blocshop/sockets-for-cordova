@@ -15,18 +15,68 @@ or you can use GIT repository for most recent version:
 `cordova plugin add https://github.com/blocshop/sockets-for-cordova`
 
 ## Sample usage
-TODO
+Here is simple example of how to connect to remote server, consume data from it and close the connection.
+
+Create instance of Socket type:
+```
+var socket = new Socket();
+```
+
+Set data consumer, error and close handlers:
+```
+socket.onData = function(data) {
+  // invoked after new batch of data is received (typed array of bytes Uint8Array)
+};
+socket.onError = function(errorMessage) {
+  // invoked after error occurs during connection
+};
+socket.onClose = function(hasError) {
+  // invoked after connection close
+};
+```
+Connect to server someremoteserver.com, with port 1234:
+```
+socket.open(
+  "someremoteserver.com",
+  1234,
+  function() {
+    // invoked after successful opening of socket
+  },
+  function(errorMessage) {
+    // invoked after unsuccessful opening of socket
+  });
+```
+
+Send "Hello world" to server:
+```
+var dataString = "Hello world";
+var data = new Uint8Array(dataString.length);
+for (var i = 0; i < data.length; i++) {
+  data[i] = dataString.charCodeAt(i);
+}
+socket.send(data);
+```
+
+Close the connection gracefully by sending FIN to server:
+```
+socket.shutdownWrite();  
+```
+
+or close the connection immediately:
+```
+socket.close();
+```
 
 ## API
 ### Event handlers
 #### `onData: (data: Uint8Array) => void`
-Called when new batch of data was received by the client. Data are represented as typed array of bytes (`Uint8Array`).
+Invoked after new batch of data is received by the client. Data are represented as typed array of bytes (`Uint8Array`).
 
 #### `onClose: (hasError: boolean) => void`
-Called after connection was successfully closed. Parameter `hasError` indicates whether connection was closed as a result of some error.
+Invoked after connection close. Native resources are released after this handler is invoked. Parameter `hasError` indicates whether connection was closed as a result of some error.
 
 #### `onError: (message: string) => void`
-Called  when some error occurs on opened connection.
+Invoked when some error occurs during connection.
 
 ### Methods
 #### `open(host, port, onSuccess?, onError?): void`
