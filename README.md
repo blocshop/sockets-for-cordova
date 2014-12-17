@@ -54,7 +54,7 @@ var data = new Uint8Array(dataString.length);
 for (var i = 0; i < data.length; i++) {
   data[i] = dataString.charCodeAt(i);
 }
-socket.send(data);
+socket.write(data);
 ```
 
 Close the connection gracefully by sending FIN to server:
