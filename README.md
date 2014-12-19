@@ -78,6 +78,12 @@ Invoked after connection close. Native resources are released after this handler
 #### `onError: (message: string) => void`
 Invoked when some error occurs during connection.
 
+### Properties
+#### `state: Socket.State`
+Represents state of the socket. It can have three values represented by `Socket.State` enum: `Socket.State.CLOSED`, `Socket.State.OPENING` or `Socket.State.OPENED`.
+
+Initial state of socket is CLOSED. After open is called, it switches to OPENING. If it is successfuly opened, it goes to OPENED state. If opening fails, it goes back to CLOSE. When socket is closed (by the server or by calling close method), it goes to CLOSED as well.
+
 ### Methods
 #### `open(host, port, onSuccess?, onError?): void`
 Establishes connection with the remote host.
