@@ -16,9 +16,11 @@ public class SocketAdapterImpl implements SocketAdapter {
     private final int INPUT_STREAM_BUFFER_SIZE = 16 * 1024;
     private final Socket socket;
     
+    private Consumer<Void> openEventHandler;
+    private Consumer<String> openErrorEventHandler;
     private Consumer<byte[]> dataConsumer;
     private Consumer<Boolean> closeEventHandler;
-    private Consumer<String> exceptionHandler;
+    private Consumer<String> errorEventHandler;
     
     private ExecutorService executor;
 
@@ -28,9 +30,20 @@ public class SocketAdapterImpl implements SocketAdapter {
     }
 
     @Override
-    public void open(String host, int port) throws Throwable {
-    	this.openWithBackgroundThread(host, port);
-        this.submitReadTask();
+    public void open(final String host, final int port) {
+        this.executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+					socket.connect(new InetSocketAddress(host, port));
+					invokeOpenEventHandler();
+					submitReadTask();
+				} catch (IOException e) {
+					Logging.Error(SocketAdapterImpl.class.getName(), "Error during connecting of socket", e.getCause());
+					invokeOpenErrorEventHandler(e.getMessage());
+				}
+            }
+        });
     }
     
     @Override
@@ -74,6 +87,16 @@ public class SocketAdapterImpl implements SocketAdapter {
         }
     }
     
+	@Override
+	public void setOpenEventHandler(Consumer<Void> openEventHandler) {
+		this.openEventHandler = openEventHandler;
+	}
+
+	@Override
+	public void setOpenErrorEventHandler(Consumer<String> openErrorEventHandler) {
+		this.openErrorEventHandler = openErrorEventHandler;
+	}
+    
     @Override
     public void setDataConsumer(Consumer<byte[]> dataConsumer) {
         this.dataConsumer = dataConsumer;
@@ -85,31 +108,10 @@ public class SocketAdapterImpl implements SocketAdapter {
     }
 
     @Override
-    public void setErrorHandler(Consumer<String> exceptionHandler) {
-        this.exceptionHandler = exceptionHandler;
+    public void setErrorEventHandler(Consumer<String> errorEventHandler) {
+        this.errorEventHandler = errorEventHandler;
     }
-    
-    private void openWithBackgroundThread(final String host, final int port) throws Throwable {
-        Future<?> future = this.executor.submit(new Runnable() {
-            @Override
-            public void run() {
-                try {
-					socket.connect(new InetSocketAddress(host, port));
-				} catch (IOException e) {
-					Logging.Error(SocketAdapterImpl.class.getName(), "Error during connecting of socket", e.getCause());
-					throw new RuntimeException(e);
-				}
-            }
-        });
-        
-        try {
-			future.get();
-        } 
-        catch (ExecutionException e) {
-			throw e.getCause();
-		}
-    }
-    
+
     private void submitReadTask() {
         this.executor.submit(new Runnable() {
             @Override
@@ -150,6 +152,18 @@ public class SocketAdapterImpl implements SocketAdapter {
             this.invokeDataConsumer(data);
         }
     }
+
+    private void invokeOpenEventHandler() {
+        if (this.openEventHandler != null) {
+            this.openEventHandler.accept((Void)null);
+        }
+    }
+    
+    private void invokeOpenErrorEventHandler(String errorMessage) {
+        if (this.openErrorEventHandler != null) {
+            this.openErrorEventHandler.accept(errorMessage);
+        }
+    }
     
     private void invokeDataConsumer(byte[] data) {
         if (this.dataConsumer != null) {
@@ -164,8 +178,8 @@ public class SocketAdapterImpl implements SocketAdapter {
     }
     
     private void invokeExceptionHandler(String errorMessage) {
-        if (this.exceptionHandler != null) {
-            this.exceptionHandler.accept(errorMessage);
+        if (this.errorEventHandler != null) {
+            this.errorEventHandler.accept(errorMessage);
         }
     }
 }
