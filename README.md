@@ -80,7 +80,11 @@ Invoked when some error occurs during connection.
 
 ### Properties
 #### `state: Socket.State`
-Provides state of the socket. It can have 4 values represented by `Socket.State` enum: `Socket.State.CLOSED`, `Socket.State.OPENING`, `Socket.State.OPENED` or `Socket.State.CLOSING`.
+Provides state of the socket. It can have 4 values represented by `Socket.State` enum:
+- `Socket.State.CLOSED`
+- `Socket.State.OPENING`
+- `Socket.State.OPENED`
+- `Socket.State.CLOSING`
 
 Initial state of socket is CLOSED. Invoking `open` method changes state to OPENING. If it's successfuly opened, it goes to OPENED state. If opening fails, it goes back to CLOSED. Socket goes to CLOSING state immediately after `close` method is called. When socket is closed (by the server or by calling close method), it goes to CLOSED state.
 
