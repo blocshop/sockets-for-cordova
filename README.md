@@ -80,9 +80,17 @@ Invoked when some error occurs during connection.
 
 ### Properties
 #### `state: Socket.State`
-Represents state of the socket. It can have three values represented by `Socket.State` enum: `Socket.State.CLOSED`, `Socket.State.OPENING` or `Socket.State.OPENED`.
+Provides state of the socket. It can have 4 values represented by `Socket.State` enum: `Socket.State.CLOSED`, `Socket.State.OPENING`, `Socket.State.OPENED` or `Socket.State.CLOSING`.
 
-Initial state of socket is CLOSED. After open is called, it switches to OPENING. If it is successfuly opened, it goes to OPENED state. If opening fails, it goes back to CLOSE. When socket is closed (by the server or by calling close method), it goes to CLOSED as well.
+Initial state of socket is CLOSED. Invoking `open` method changes state to OPENING. If it's successfuly opened, it goes to OPENED state. If opening fails, it goes back to CLOSED. Socket goes to CLOSING state immediately after `close` method is called. When socket is closed (by the server or by calling close method), it goes to CLOSED state.
+
+##### Example
+Check if socket is connected:
+```
+if (socket.state == Socket.State.OPENED) {
+  console.log("Socket is opened");
+}
+```
 
 ### Methods
 #### `open(host, port, onSuccess?, onError?): void`
