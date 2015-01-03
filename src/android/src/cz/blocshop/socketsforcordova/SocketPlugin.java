@@ -47,15 +47,11 @@ public class SocketPlugin extends CordovaPlugin {
 		SocketAdapter socketAdapter = new SocketAdapterImpl();
 		socketAdapter.setCloseEventHandler(new CloseEventHandler(socketKey));
 		socketAdapter.setDataConsumer(new DataConsumer(socketKey));
-		socketAdapter.setErrorHandler(new ErrorHandler(socketKey));
+		socketAdapter.setErrorEventHandler(new ErrorEventHandler(socketKey));
+		socketAdapter.setOpenErrorEventHandler(new OpenErrorEventHandler(callbackContext));
+		socketAdapter.setOpenEventHandler(new OpenEventHandler(socketKey, socketAdapter, callbackContext));
 		
-		try {
-			socketAdapter.open(host, port);
-			this.socketAdapters.put(socketKey, socketAdapter);
-			callbackContext.success();
-		} catch (Throwable t) {
-			callbackContext.error(t.toString());
-		}
+		socketAdapter.open(host, port);
 	}
 	
 	private void write(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
@@ -198,9 +194,9 @@ public class SocketPlugin extends CordovaPlugin {
 		}
 	}
 	
-	private class ErrorHandler implements Consumer<String> {
+	private class ErrorEventHandler implements Consumer<String> {
 		private String socketKey;
-		public ErrorHandler(String socketKey) {
+		public ErrorEventHandler(String socketKey) {
 			this.socketKey = socketKey;
 		}
 		@Override
@@ -215,6 +211,33 @@ public class SocketPlugin extends CordovaPlugin {
 			} catch (JSONException e) {
 				e.printStackTrace();
 			}
+		}
+	}
+	
+	private class OpenErrorEventHandler implements Consumer<String> {
+		private CallbackContext openCallbackContext;
+		public OpenErrorEventHandler(CallbackContext openCallbackContext) {
+			this.openCallbackContext = openCallbackContext;
+		}
+		@Override
+		public void accept(String errorMessage) {
+			this.openCallbackContext.error(errorMessage);
+		}
+	}
+	
+	private class OpenEventHandler implements Consumer<Void> {
+		private String socketKey;
+		private SocketAdapter socketAdapter;
+		private CallbackContext openCallbackContext;
+		public OpenEventHandler(String socketKey, SocketAdapter socketAdapter, CallbackContext openCallbackContext) {
+			this.socketKey = socketKey;
+			this.socketAdapter = socketAdapter;
+			this.openCallbackContext = openCallbackContext;
+		}
+		@Override
+		public void accept(Void voidObject) {
+			socketAdapters.put(socketKey, socketAdapter);
+			this.openCallbackContext.success();
 		}
 	}
 }
