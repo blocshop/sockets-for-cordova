@@ -49,7 +49,7 @@
     socketAdapter.closeEventHandler = ^ void (BOOL hasErrors) {
         NSMutableDictionary *closeDictionaryData = [[NSMutableDictionary alloc] init];
         [closeDictionaryData setObject:@"Close" forKey:@"type"];
-        [closeDictionaryData setObject:(hasErrors == TRUE ? @"true": @"false") forKey:@"hasError"];
+        [closeDictionaryData setObject:[NSNumber numberWithBool:hasErrors] forKey:@"hasError"];
         [closeDictionaryData setObject:socketKey forKey:@"socketKey"];
         
         [self dispatchEventWithDictionary:closeDictionaryData];
