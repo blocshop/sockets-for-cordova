@@ -1,6 +1,7 @@
 #include <sys/socket.h>
 #include <netdb.h>
 #include <arpa/inet.h>
+#include <math.h>
 #import "SocketAdapter.h"
 
 CFReadStreamRef readStream;
@@ -10,6 +11,8 @@ NSInputStream *inputStream;
 NSOutputStream *outputStream;
 
 BOOL wasOpenned = FALSE;
+
+int const WRITE_BUFFER_SIZE = 10 * 1024;
 
 @implementation SocketAdapter
 
@@ -169,13 +172,26 @@ BOOL wasOpenned = FALSE;
 }
 
 - (void)write:(NSArray *)dataArray {
-    uint8_t buf[dataArray.count];
-    for (int i = 0; i < dataArray.count; i++) {
-        buf[i] = (unsigned char)[[dataArray objectAtIndex:i] integerValue];
+    int numberOfBatches = ceil((float)dataArray.count / (float)WRITE_BUFFER_SIZE);
+    for (int i = 0; i < (numberOfBatches - 1); i++) {
+        [self writeSubarray:dataArray offset:i * WRITE_BUFFER_SIZE length:WRITE_BUFFER_SIZE];
     }
-    NSInteger bytesWritten = [outputStream write:buf maxLength:dataArray.count];
+    int lastBatchPosition = (numberOfBatches - 1) * WRITE_BUFFER_SIZE;
+    [self writeSubarray:dataArray offset:lastBatchPosition length:(dataArray.count - lastBatchPosition)];
+}
+
+- (void)writeSubarray:(NSArray *)dataArray offset:(long)offset length:(long)length {
+    uint8_t buf[length];
+    for (long i = 0; i < length; i++) {
+        unsigned char byte = (unsigned char)[[dataArray objectAtIndex:(offset + i)] integerValue];
+        buf[i] = byte;
+    }
+    NSInteger bytesWritten = [outputStream write:buf maxLength:length];
     if (bytesWritten == -1) {
         @throw [NSException exceptionWithName:@"SocketException" reason:[outputStream.streamError localizedDescription] userInfo:nil];
+    }
+    if (bytesWritten != length) {
+        [self writeSubarray:dataArray offset:(offset + bytesWritten) length:(length - bytesWritten)];
     }
 }
 
