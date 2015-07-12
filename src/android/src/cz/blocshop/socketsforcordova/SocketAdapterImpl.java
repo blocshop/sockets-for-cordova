@@ -18,6 +18,7 @@
 package cz.blocshop.socketsforcordova;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -65,7 +66,9 @@ public class SocketAdapterImpl implements SocketAdapter {
     
     @Override
     public void write(byte[] data) throws IOException {
-        this.socket.getOutputStream().write(data);
+        OutputStream outputStream = this.socket.getOutputStream();
+        outputStream.write(data);
+        outputStream.flush();
     }
 
     @Override

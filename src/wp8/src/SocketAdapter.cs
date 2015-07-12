@@ -37,10 +37,10 @@ namespace Blocshop.ScoketsForCordova
         Action<Exception> ErrorHandler { set; }
     }
 
-
     public class SocketAdapter : ISocketAdapter
     {
         private const int InputStreamBufferSize = 16 * 1024;
+
         private readonly Socket socket;
 
         public Action<byte[]> DataConsumer { get; set; }

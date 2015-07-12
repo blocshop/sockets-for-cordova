@@ -18,6 +18,7 @@
 package cz.blocshop.socketsforcordova;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.Map;
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
 import org.apache.cordova.CordovaPlugin;
+import org.apache.cordova.PluginResult;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -33,29 +35,40 @@ import org.json.JSONObject;
 import android.annotation.SuppressLint;
 
 public class SocketPlugin extends CordovaPlugin {
-	
-	Map<String, SocketAdapter> socketAdapters = new HashMap<String, SocketAdapter>(); 
+
+    private String WEB_VIEW_DATA_STRING_ENCODING = "ISO-8859-1";
+
+	private Map<String, SocketAdapter> socketAdapters = new HashMap<String, SocketAdapter>();
+    private CallbackContext eventDispatcherCallbackContext = null;
 	
 	@Override
 	public boolean execute(String action, CordovaArgs args, CallbackContext callbackContext) throws JSONException {
-
-		if (action.equals("open")) {
-			this.open(args, callbackContext);
-		} else if (action.equals("write")) {
-			this.write(args, callbackContext);
+        if (action.equals("write")) {
+            this.write(args, callbackContext);
+        } else if (action.equals("open")) {
+            this.open(args, callbackContext);
+        } else if (action.equals("close")) {
+            this.close(args, callbackContext);
 		} else if (action.equals("shutdownWrite")) {
 			this.shutdownWrite(args, callbackContext);
-		} else if (action.equals("close")) {
-			this.close(args, callbackContext);
-		} else if (action.equals("setOptions")) {
+		} else if (action.equals("registerEventDispatcher")) {
+            this.registerEventDispatcher(args, callbackContext);
+        } else if (action.equals("setOptions")) {
 			this.setOptions(args, callbackContext);
 		} else {
-			callbackContext.error(String.format("SocketPlugin - invalid action:", action));
+			callbackContext.error("SocketPlugin - invalid action: " + action);
 			return false;
 		}
 		return true;
 	}
-	
+
+    private void registerEventDispatcher(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
+        PluginResult result = new PluginResult(PluginResult.Status.NO_RESULT);
+        result.setKeepCallback(true);
+        callbackContext.sendPluginResult(result);
+        this.eventDispatcherCallbackContext = callbackContext;
+    }
+
 	private void open(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
 		String socketKey = args.getString(0);
 		String host = args.getString(1);
@@ -73,14 +86,18 @@ public class SocketPlugin extends CordovaPlugin {
 	
 	private void write(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
 		String socketKey = args.getString(0);
-		JSONArray data = args.getJSONArray(1);
-		
-		byte[] dataBuffer = new byte[data.length()];
-		for(int i = 0; i < dataBuffer.length; i++) {
-			dataBuffer[i] = (byte) data.getInt(i);
-		}
-		
-		SocketAdapter socket = this.getSocketAdapter(socketKey);
+		String dataString = args.getString(1);
+
+        byte[] dataBuffer;
+        try {
+            dataBuffer = dataString.getBytes(WEB_VIEW_DATA_STRING_ENCODING);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+            callbackContext.error(e.toString());
+            return;
+        }
+
+        SocketAdapter socket = this.getSocketAdapter(socketKey);
 		
 		try {
 			socket.write(dataBuffer);
@@ -155,9 +172,16 @@ public class SocketPlugin extends CordovaPlugin {
 		return this.socketAdapters.get(socketKey);
 	}
 	
-	private void dispatchEvent(JSONObject jsonEventObject) {
-		this.webView.sendJavascript(String.format("window.Socket.dispatchEvent(%s);", jsonEventObject.toString()));		
-	}	
+	private void dispatchEvent(final JSONObject jsonEventObject) {
+        this.cordova.getActivity().runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                PluginResult result = new PluginResult(PluginResult.Status.OK, jsonEventObject);
+                result.setKeepCallback(true);
+                eventDispatcherCallbackContext.sendPluginResult(result);
+            }
+        });
+	}
 	
 	private class CloseEventHandler implements Consumer<Boolean> {
 		private String socketKey;
@@ -192,8 +216,7 @@ public class SocketPlugin extends CordovaPlugin {
 			try {
 				JSONObject event = new JSONObject();
 				event.put("type", "DataReceived");
-				//event.put("data", new JSONArray(data)); NOT SUPPORTED IN API LEVEL LESS THAN 19
-				event.put("data", new JSONArray(this.toByteList(data)));
+				event.put("data", this.byteArrayToString(data));
 				event.put("socketKey", socketKey);
 				
 				dispatchEvent(event);
@@ -201,14 +224,15 @@ public class SocketPlugin extends CordovaPlugin {
 				e.printStackTrace();
 			}
 		}
-		
-		private List<Byte> toByteList(byte[] array) {
-			List<Byte> byteList = new ArrayList<Byte>(array.length);
-			for (int i = 0; i < array.length; i++) {
-				byteList.add(array[i]);
-			}
-			return byteList;
-		}
+
+        private String byteArrayToString(byte[] array) {
+            try {
+                return new String(array, WEB_VIEW_DATA_STRING_ENCODING);
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+                return "";
+            }
+        }
 	}
 	
 	private class ErrorEventHandler implements Consumer<String> {

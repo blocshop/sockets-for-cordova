@@ -29,6 +29,8 @@ namespace Blocshop.ScoketsForCordova
 {
     public class SocketPlugin : BaseCommand
     {
+        private const string WebViewDataStringEncoding = "ISO-8859-1";
+
         private readonly ISocketStorage socketStorage;
         private string eventDispatcherCallbackId;
 
@@ -40,9 +42,11 @@ namespace Blocshop.ScoketsForCordova
 
         public void open(string parameters)
         {
-            string socketKey = JsonHelper.Deserialize<string[]>(parameters)[0];
-            string host = JsonHelper.Deserialize<string[]>(parameters)[1];
-            int port = int.Parse(JsonHelper.Deserialize<string[]>(parameters)[2]);
+            string[] parametersArray = JsonHelper.Deserialize<string[]>(parameters);
+
+            string socketKey = parametersArray[0];
+            string host = parametersArray[1];
+            int port = int.Parse(parametersArray[2]);
 
             ISocketAdapter socketAdapter = new SocketAdapter();
             socketAdapter.CloseEventHandler = (hasError) => this.CloseEventHandler(socketKey, hasError);
@@ -69,9 +73,12 @@ namespace Blocshop.ScoketsForCordova
 
         public void write(string parameters)
         {
-            string socketKey = JsonHelper.Deserialize<string[]>(parameters)[0];
-            string dataJsonArray = JsonHelper.Deserialize<string[]>(parameters)[1];
-            byte[] data = JsonHelper.Deserialize<byte[]>(dataJsonArray);
+            string[] parametersArray = JsonHelper.Deserialize<string[]>(parameters);
+
+            string socketKey = parametersArray[0];
+            string dataString = parametersArray[1];
+
+            byte[] data = Encoding.GetEncoding(WebViewDataStringEncoding).GetBytes(dataString);
 
             ISocketAdapter socket = this.socketStorage.Get(socketKey);
             try
@@ -104,7 +111,7 @@ namespace Blocshop.ScoketsForCordova
             socket.Close();
         }
 
-        public void registerWPEventDispatcher(string parameters)
+        public void registerEventDispatcher(string parameters)
         {
             this.eventDispatcherCallbackId = this.CurrentCommandCallbackId;
             PluginResult result = new PluginResult(PluginResult.Status.OK);
@@ -148,9 +155,11 @@ namespace Blocshop.ScoketsForCordova
 
         private void DataConsumer(string socketKey, byte[] data)
         {
+            string dataString = Encoding.GetEncoding(WebViewDataStringEncoding).GetString(data, 0, data.Count());
+
             this.DispatchEvent(new DataReceivedSocketEvent
             {
-                Data = data,
+                Data = dataString,
                 SocketKey = socketKey
             });
         }

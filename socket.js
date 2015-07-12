@@ -61,7 +61,8 @@ Socket.prototype.open = function (host, port, success, error) {
                 _that.onClose(payload.hasError);
                 break;
             case "DataReceived":
-                _that.onData(new Uint8Array(payload.data));
+                var dataArray = string2Uint8Array(payload.data);
+                _that.onData(dataArray);
                 break;
             case "Error":
                 _that.onError(payload.errorMessage);
@@ -98,9 +99,7 @@ Socket.prototype.write = function (data, success, error) {
         return;
     }
 
-    var dataToWrite = data instanceof Uint8Array
-        ? Socket._copyToArray(data)
-        : data;
+    var dataToWrite = uint8ArrayToString(data);
 
     exec(
         success,
@@ -175,12 +174,30 @@ Socket.dispatchEvent = function (event) {
     document.dispatchEvent(eventReceive);
 };
 
-Socket._copyToArray = function (array) {
-    var outputArray = new Array(array.length);
-    for (var i = 0; i < array.length; i++) {
-        outputArray[i] = array[i];
+var uint8ArrayToString = function (array) {
+    var CHUNK_LENGTH = 1000;
+
+    var numberOfChunks = Math.ceil(array.length / CHUNK_LENGTH);
+    var stringChunks = new Array(numberOfChunks);
+
+    for (var i = 0; i < stringChunks.length; i++) {
+        var start = i * CHUNK_LENGTH;
+        var end = start + CHUNK_LENGTH;
+
+        var subArray = array.subarray(start, end);
+
+        stringChunks[i] = String.fromCharCode.apply(String, subArray);
     }
-    return outputArray;
+
+    return stringChunks.join("");
+};
+
+var string2Uint8Array = function (str) {
+    var array = new Uint8Array(str.length);
+    for (var i = 0; i < array.length; i++) {
+        array[i] = str.charCodeAt(i);
+    }
+    return array;
 };
 
 var guid = (function () {
@@ -196,18 +213,15 @@ var guid = (function () {
     };
 })();
 
-// Register event dispatcher for Windows Phone
-if (navigator.userAgent.match(/iemobile/i)) {
-    window.document.addEventListener("deviceready", function () {
-        exec(
-            Socket.dispatchEvent,
-            function (errorMessage) {
-                console.error("SocketsForCordova: Cannot register WP event dispatcher, Error: " + errorMessage);
-            },
-            CORDOVA_SERVICE_NAME,
-            "registerWPEventDispatcher",
-            [ ]);
-    });
-}
+window.document.addEventListener("deviceready", function () {
+    exec(
+        Socket.dispatchEvent,
+        function (errorMessage) {
+            console.error("SocketsForCordova: Cannot register WP event dispatcher, Error: " + errorMessage);
+        },
+        CORDOVA_SERVICE_NAME,
+        "registerEventDispatcher",
+        [ ]);
+});
 
 module.exports = Socket;
