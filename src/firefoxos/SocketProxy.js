@@ -1,3 +1,4 @@
+//TODO: we need add below setting to platforms/firefoxos/www/manifest.webapp
 //    "type": "privileged",
 //    "permissions": {
 //      "tcp-socket": {
@@ -7,8 +8,7 @@
 // or add below setting to your cordova project config.xml
 //    <platform name="firefoxos">
 //        <permission name="tcp-socket" description="Create TCP sockets and communicate over them." privileged="true"/>
-//    </platform> //
-//var socket_status = Socket().State;
+//    </platform>
 
 function TcpSocket() {
   this.onData = null;
