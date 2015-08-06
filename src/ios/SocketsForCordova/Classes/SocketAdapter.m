@@ -59,6 +59,13 @@ int const WRITE_BUFFER_SIZE = 10 * 1024;
     outputStream = (__bridge NSOutputStream *)writeStream;
     [outputStream open];
 
+    /** SSL
+     [inputStream setProperty:NSStreamSocketSecurityLevelNegotiatedSSL
+     forKey:NSStreamSocketSecurityLevelKey];
+     [outputStream setProperty:NSStreamSocketSecurityLevelNegotiatedSSL
+     forKey:NSStreamSocketSecurityLevelKey];
+     **/
+
     [self performSelectorOnMainThread:@selector(runReadLoop) withObject:nil waitUntilDone:NO];
 }
 
