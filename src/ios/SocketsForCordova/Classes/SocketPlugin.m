@@ -132,24 +132,38 @@
 }
 
 - (void) close:(CDVInvokedUrlCommand *) command {
-    
     NSString* socketKey = [command.arguments objectAtIndex:0];
 	
-	SocketAdapter *socket = [self getSocketAdapter:socketKey];
+    SocketAdapter *socket = nil;
+    @try{
+        socket = [self getSocketAdapter:socketKey];
+    }
+    @catch(NSException *e){
+        NSLog(@"NSException: %@", e.reason);
+    }
     
-    [self.commandDelegate runInBackground:^{
-        @try {
-            [socket close];
+    if(socket != nil){
+        [self.commandDelegate runInBackground:^{
+            @try {
+                [socket close];
+                [self.commandDelegate
+                 sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
+                 callbackId:command.callbackId];
+            }
+            @catch (NSException *e) {
+                [self.commandDelegate
+                 sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:e.reason]
+                 callbackId:command.callbackId];
+            }
+        }];
+    } else {
+        [self.commandDelegate runInBackground:^{
             [self.commandDelegate
              sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
              callbackId:command.callbackId];
-        }
-        @catch (NSException *e) {
-            [self.commandDelegate
-             sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:e.reason]
-             callbackId:command.callbackId];
-        }
-    }];
+            
+        }];
+    }
 }
 
 - (void) setOptions: (CDVInvokedUrlCommand *) command {
