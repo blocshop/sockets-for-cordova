@@ -51,45 +51,7 @@
         // Uncomment to override the CDVCommandQueue used
         // _commandQueue = [[MainCommandQueue alloc] initWithViewController:self];
     }
-    
-    
-    
-    NSLog(@"!!!!!!!!!!BEGIN TEST!!!!!!!");
-
-    self.socketAdapter = [[SocketAdapter alloc] init];
-    
-    self.socketAdapter.dataConsumer = ^ void (NSArray* dataArray) {
-        
-        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dataArray
-                                                           options:NSJSONWritingPrettyPrinted error:nil];
-        NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-        
-        NSLog(@"bytes read: %@", jsonString);
-    };
-    self.socketAdapter.closeEventHandler = ^ void (BOOL hasErrors) {
-        NSLog(@"socket closed");
-    };
-    self.socketAdapter.errorHandler = ^ void (NSString *error){
-        NSLog(@"socket error: %@", error);
-    };
-    
-    [self.socketAdapter connect:@"69.36.243.188" port:[NSNumber numberWithInt:5000]];
-    
-    
-    NSData* dataJson = [@"[1,2,3,10]" dataUsingEncoding:NSUTF8StringEncoding];
-    
-    NSError *e = nil;
-	NSArray *dataBuffer = [NSJSONSerialization JSONObjectWithData:dataJson options:NSJSONReadingMutableContainers error:&e];
-
-    
-    [self.socketAdapter write:dataBuffer];
-
-      
-    
-    NSLog(@"!!!!!!!!!!END TEST!!!!!!!");
-    
-    
-    
+ 
     return self;
 }
 
