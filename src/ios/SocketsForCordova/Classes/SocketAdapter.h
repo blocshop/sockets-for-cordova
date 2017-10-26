@@ -19,6 +19,11 @@
 
 @interface SocketAdapter : NSObject <NSStreamDelegate> {
 @public
+    CFReadStreamRef readStream1;
+    CFWriteStreamRef writeStream1;
+
+    NSInputStream *inputStream1;
+    NSOutputStream *outputStream1;
 }
 
 - (void)open:(NSString *)host port:(NSNumber*)port;

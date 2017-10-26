@@ -24,35 +24,35 @@
 
 - (void) open : (CDVInvokedUrlCommand*) command {
     
-	NSString *socketKey = [command.arguments objectAtIndex:0];
-	NSString *host = [command.arguments objectAtIndex:1];
-	NSNumber *port = [command.arguments objectAtIndex:2];
-    
+    NSString *socketKey = [command.arguments objectAtIndex:0];
+    NSString *host = [command.arguments objectAtIndex:1];
+    NSNumber *port = [command.arguments objectAtIndex:2];
+
     if (socketAdapters == nil) {
-		self->socketAdapters = [[NSMutableDictionary alloc] init];
-	}
-    
-	__block SocketAdapter* socketAdapter = [[SocketAdapter alloc] init];
+        self->socketAdapters = [[NSMutableDictionary alloc] init];
+    }
+
+    __block SocketAdapter* socketAdapter = [[SocketAdapter alloc] init];
     socketAdapter.openEventHandler = ^ void () {
         [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
-        
+
         [self->socketAdapters setObject:socketAdapter forKey:socketKey];
-        
+
         socketAdapter = nil;
     };
     socketAdapter.openErrorEventHandler = ^ void (NSString *error){
         [self.commandDelegate
          sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error]
          callbackId:command.callbackId];
-        
+
         socketAdapter = nil;
     };
-    socketAdapter.errorEventHandler = ^ void (NSString *error){        
+    socketAdapter.errorEventHandler = ^ void (NSString *error){
         NSMutableDictionary *errorDictionaryData = [[NSMutableDictionary alloc] init];
         [errorDictionaryData setObject:@"Error" forKey:@"type"];
         [errorDictionaryData setObject:error forKey:@"errorMessage"];
         [errorDictionaryData setObject:socketKey forKey:@"socketKey"];
-        
+
         [self dispatchEventWithDictionary:errorDictionaryData];
     };
     socketAdapter.dataConsumer = ^ void (NSArray* dataArray) {
@@ -60,7 +60,7 @@
         [dataDictionary setObject:@"DataReceived" forKey:@"type"];
         [dataDictionary setObject:dataArray forKey:@"data"];
         [dataDictionary setObject:socketKey forKey:@"socketKey"];
-        
+
         [self dispatchEventWithDictionary:dataDictionary];
     };
     socketAdapter.closeEventHandler = ^ void (BOOL hasErrors) {
@@ -68,34 +68,34 @@
         [closeDictionaryData setObject:@"Close" forKey:@"type"];
         [closeDictionaryData setObject:(hasErrors == TRUE ? @"true": @"false") forKey:@"hasError"];
         [closeDictionaryData setObject:socketKey forKey:@"socketKey"];
-        
+
         [self dispatchEventWithDictionary:closeDictionaryData];
-        
+
         [self removeSocketAdapter:socketKey];
     };
-    
+
     [self.commandDelegate runInBackground:^{
         @try {
             [socketAdapter open:host port:port];
         }
         @catch (NSException *e) {
             [self.commandDelegate
-                sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:e.reason]
-                callbackId:command.callbackId];
-            
+             sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:e.reason]
+             callbackId:command.callbackId];
+
             socketAdapter = nil;
         }
     }];
 }
 
 - (void) write:(CDVInvokedUrlCommand *) command {
-	
+
     NSString* socketKey = [command.arguments objectAtIndex:0];
     NSArray *data = [command.arguments objectAtIndex:1];
-    
+
     SocketAdapter *socket = [self getSocketAdapter:socketKey];
-    
-	[self.commandDelegate runInBackground:^{
+
+    [self.commandDelegate runInBackground:^{
         @try {
             [socket write:data];
             [self.commandDelegate
@@ -111,32 +111,32 @@
 }
 
 - (void) shutdownWrite:(CDVInvokedUrlCommand *) command {
-    
+
     NSString* socketKey = [command.arguments objectAtIndex:0];
-	
-	SocketAdapter *socket = [self getSocketAdapter:socketKey];
-    
+
+    SocketAdapter *socket = [self getSocketAdapter:socketKey];
+
     [self.commandDelegate runInBackground:^{
         @try {
             [socket shutdownWrite];
             [self.commandDelegate
-            sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
-            callbackId:command.callbackId];
+             sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
+             callbackId:command.callbackId];
         }
         @catch (NSException *e) {
             [self.commandDelegate
-            sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:e.reason]
-            callbackId:command.callbackId];
+             sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:e.reason]
+             callbackId:command.callbackId];
         }
     }];
 }
 
 - (void) close:(CDVInvokedUrlCommand *) command {
-    
+
     NSString* socketKey = [command.arguments objectAtIndex:0];
-	
-	SocketAdapter *socket = [self getSocketAdapter:socketKey];
-    
+
+    SocketAdapter *socket = [self getSocketAdapter:socketKey];
+
     [self.commandDelegate runInBackground:^{
         @try {
             [socket close];
@@ -156,13 +156,13 @@
 }
 
 - (SocketAdapter*) getSocketAdapter: (NSString*) socketKey {
-	SocketAdapter* socketAdapter = [self->socketAdapters objectForKey:socketKey];
-	if (socketAdapter == nil) {
-		NSString *exceptionReason = [NSString stringWithFormat:@"Cannot find socketKey: %@. Connection is probably closed.", socketKey];
-		
-		@throw [NSException exceptionWithName:@"IllegalArgumentException" reason:exceptionReason userInfo:nil];
-	}
-	return socketAdapter;
+    SocketAdapter* socketAdapter = [self->socketAdapters objectForKey:socketKey];
+    if (socketAdapter == nil) {
+        NSString *exceptionReason = [NSString stringWithFormat:@"Cannot find socketKey: %@. Connection is probably closed.", socketKey];
+
+        @throw [NSException exceptionWithName:@"IllegalArgumentException" reason:exceptionReason userInfo:nil];
+    }
+    return socketAdapter;
 }
 
 - (void) removeSocketAdapter: (NSString*) socketKey {
@@ -171,8 +171,8 @@
 }
 
 - (BOOL) socketAdapterExists: (NSString*) socketKey {
-	SocketAdapter* socketAdapter = [self->socketAdapters objectForKey:socketKey];
-	return socketAdapter != nil;
+    SocketAdapter* socketAdapter = [self->socketAdapters objectForKey:socketKey];
+    return socketAdapter != nil;
 }
 
 - (void) dispatchEventWithDictionary: (NSDictionary*) dictionary {
