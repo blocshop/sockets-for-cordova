@@ -1,0 +1,28 @@
+{
+  "name": "SocketsForCordova",
+  "version": "1.2.0",
+  "description": "This Cordova plugin provides JavaScript API, that allows you to communicate with server through TCP protocol. Currently we support these platforms: iOS, Android, WP8.",
+  "cordova": {
+    "id": "cz.blocshop.socketsforcordova",
+    "platforms": [
+      "ios",
+      "android",
+      "wp8"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kitolog/sockets-for-cordova"
+  },
+  "keywords": [
+    "cordova",
+    "sockets",
+    "tcp",
+    "network",
+    "cordova-ios",
+    "cordova-wp8",
+    "cordova-android"
+  ],
+  "author": "blocshop",
+  "license": "Apache-2.0"
+}

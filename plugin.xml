@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="cz.blocshop.socketsforcordova" version="1.1.0">
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="cz.blocshop.socketsforcordova" version="1.2.0">
     <name>SocketsForCordova</name>
     <description>
 		This Cordova plugin provides JavaScript API, that allows you to communicate with server through TCP protocol.
