@@ -47,9 +47,10 @@
 
         socketAdapter = nil;
     };
-    socketAdapter.errorEventHandler = ^ void (NSString *error){
+    socketAdapter.errorEventHandler = ^ void (NSString *error, NSString *errorType){
         NSMutableDictionary *errorDictionaryData = [[NSMutableDictionary alloc] init];
         [errorDictionaryData setObject:@"Error" forKey:@"type"];
+        [errorDictionaryData setObject:errorType forKey:@"errorType"];
         [errorDictionaryData setObject:error forKey:@"errorMessage"];
         [errorDictionaryData setObject:socketKey forKey:@"socketKey"];
 
@@ -97,7 +98,11 @@
 
     [self.commandDelegate runInBackground:^{
         @try {
-            [socket write:data];
+            if (socket != nil) {
+                [socket write:data];
+            }else{
+                NSLog(@"[NATIVE] Write: socket is nil. SocketKey: %@", socketKey);
+            }
             [self.commandDelegate
              sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
              callbackId:command.callbackId];
@@ -118,7 +123,12 @@
 
     [self.commandDelegate runInBackground:^{
         @try {
-            [socket shutdownWrite];
+            if (socket != nil) {
+                [socket shutdownWrite];
+            }else{
+                NSLog(@"[NATIVE] ShutdownWrite: socket is nil. SocketKey: %@", socketKey);
+            }
+
             [self.commandDelegate
              sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
              callbackId:command.callbackId];
@@ -139,7 +149,12 @@
 
     [self.commandDelegate runInBackground:^{
         @try {
-            [socket close];
+            if (socket != nil) {
+                [socket close];
+            }else{
+                NSLog(@"[NATIVE] Close: socket is nil. SocketKey: %@", socketKey);
+            }
+
             [self.commandDelegate
              sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
              callbackId:command.callbackId];
@@ -158,15 +173,16 @@
 - (SocketAdapter*) getSocketAdapter: (NSString*) socketKey {
     SocketAdapter* socketAdapter = [self->socketAdapters objectForKey:socketKey];
     if (socketAdapter == nil) {
-        NSString *exceptionReason = [NSString stringWithFormat:@"Cannot find socketKey: %@. Connection is probably closed.", socketKey];
+        NSLog(@"[NATIVE] Cannot find socketKey: %@. Connection is probably closed.", socketKey);
+        //NSString *exceptionReason = [NSString stringWithFormat:@"Cannot find socketKey: %@. Connection is probably closed.", socketKey];
 
-        @throw [NSException exceptionWithName:@"IllegalArgumentException" reason:exceptionReason userInfo:nil];
+        //@throw [NSException exceptionWithName:@"IllegalArgumentException" reason:exceptionReason userInfo:nil];
     }
     return socketAdapter;
 }
 
 - (void) removeSocketAdapter: (NSString*) socketKey {
-    NSLog(@"Removing socket adapter from storage.");
+    NSLog(@"[NATIVE] Removing socket adapter from storage.");
     [self->socketAdapters removeObjectForKey:socketKey];
 }
 
@@ -178,7 +194,7 @@
 - (void) dispatchEventWithDictionary: (NSDictionary*) dictionary {
     NSData *jsonData = [NSJSONSerialization dataWithJSONObject:dictionary options:0 error:nil];
     NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-    
+
     [self dispatchEvent:jsonString];
 }
 

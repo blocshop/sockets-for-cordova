@@ -24,6 +24,9 @@
 
     NSInputStream *inputStream1;
     NSOutputStream *outputStream1;
+
+    NSTimer *openTimer;
+    NSTimer *writeTimer;
 }
 
 - (void)open:(NSString *)host port:(NSNumber*)port;
@@ -36,6 +39,6 @@
 @property (copy) void (^openErrorEventHandler)(NSString*);
 @property (copy) void (^dataConsumer)(NSArray*);
 @property (copy) void (^closeEventHandler)(BOOL);
-@property (copy) void (^errorEventHandler)(NSString*);
+@property (copy) void (^errorEventHandler)(NSString*, NSString *);
 
 @end

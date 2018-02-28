@@ -27,19 +27,24 @@ CFWriteStreamRef writeStream;
 NSInputStream *inputStream;
 NSOutputStream *outputStream;
 
+NSTimer *openTimer;
+NSTimer *writeTimer;
+
 BOOL wasOpenned = FALSE;
 
 int const WRITE_BUFFER_SIZE = 10 * 1024;
 
+int openTimeoutSeconds = 5.0;
+int writeTimeoutSeconds = 5.0;
+
 @implementation SocketAdapter
 
 - (void)open:(NSString *)host port:(NSNumber*)port {
-    
+
     CFReadStreamRef readStream2;
     CFWriteStreamRef writeStream2;
 
-
-    NSLog(@"Setting up connection to %@ : %@", host, [port stringValue]);
+    NSLog(@"[NATIVE] Setting up connection to %@ : %@", host, [port stringValue]);
 
     if (![self isIp:host]) {
         host = [self resolveIp:host];
@@ -51,7 +56,7 @@ int const WRITE_BUFFER_SIZE = 10 * 1024;
     CFWriteStreamSetProperty(writeStream2, kCFStreamPropertyShouldCloseNativeSocket, kCFBooleanTrue);
 
     if(!CFWriteStreamOpen(writeStream2) || !CFReadStreamOpen(readStream2)) {
-        NSLog(@"Error, streams not open");
+        NSLog(@"[NATIVE] Error, streams not open");
 
         @throw [NSException exceptionWithName:@"SocketException" reason:@"Cannot open streams." userInfo:nil];
     }
@@ -60,10 +65,26 @@ int const WRITE_BUFFER_SIZE = 10 * 1024;
     [inputStream1 setDelegate:self];
     [inputStream1 open];
 
+    NSTimer *timer = [NSTimer timerWithTimeInterval:openTimeoutSeconds target:self selector:@selector(onOpenTimeout:) userInfo:nil repeats:NO];
+    [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSDefaultRunLoopMode];
+    openTimer = timer;
+
     outputStream1 = (__bridge NSOutputStream *)writeStream2;
     [outputStream1 open];
 
     [self performSelectorOnMainThread:@selector(runReadLoop) withObject:nil waitUntilDone:NO];
+}
+
+-(void)onOpenTimeout:(NSTimer *)timer {
+    NSLog(@"[NATIVE] Open timeout: %d", openTimeoutSeconds);
+    self.errorEventHandler(@"openTimeout", @"timeout");
+    openTimer = nil;
+}
+
+-(void)onWriteTimeout:(NSTimer *)timer {
+    NSLog(@"[NATIVE] Write timeout: %d", writeTimeoutSeconds);
+    self.errorEventHandler(@"writeTimeout", @"timeout");
+    writeTimer = nil;
 }
 
 -(BOOL)isIp:(NSString*) host {
@@ -82,7 +103,7 @@ int const WRITE_BUFFER_SIZE = 10 * 1024;
 
 -(NSString*)resolveIp:(NSString*) host {
 
-    NSLog(@"Resolving host: %@", host);
+    NSLog(@"[NATIVE] Resolving host: %@", host);
 
     const char *buff = [host cStringUsingEncoding:NSUTF8StringEncoding];
     struct hostent *host_entry = gethostbyname(buff);
@@ -94,7 +115,7 @@ int const WRITE_BUFFER_SIZE = 10 * 1024;
     char *hostCstring = inet_ntoa(*((struct in_addr *)host_entry->h_addr_list[0]));
     host = [NSString stringWithUTF8String:hostCstring];
 
-    NSLog(@"Resolved ip: %@", host);
+    NSLog(@"[NATIVE] Resolved ip: %@", host);
 
     return host;
 }
@@ -104,7 +125,7 @@ int const WRITE_BUFFER_SIZE = 10 * 1024;
 }
 
 - (void)shutdownWrite {
-    NSLog(@"Shuting down write on socket.");
+    NSLog(@"[NATIVE] Shuting down write on socket.");
 
     [self closeOutputStream];
 
@@ -143,10 +164,21 @@ int const WRITE_BUFFER_SIZE = 10 * 1024;
         case NSStreamEventOpenCompleted: {
             self.openEventHandler();
             wasOpenned = TRUE;
+            if(openTimer != nil){
+                NSLog(@"[NATIVE] openTimer invalidate on open event");
+                [openTimer invalidate];
+                openTimer = nil;
+            }
             break;
         }
         case NSStreamEventHasBytesAvailable: {
             if(stream == inputStream1) {
+                if(writeTimer != nil){
+                    NSLog(@"[NATIVE] writeTimer invalidate on has bytes event");
+                    [writeTimer invalidate];
+                    writeTimer = nil;
+                }
+
                 uint8_t buf[65535];
                 long len = [inputStream1 read:buf maxLength:65535];
 
@@ -172,14 +204,14 @@ int const WRITE_BUFFER_SIZE = 10 * 1024;
         }
         case NSStreamEventErrorOccurred:
         {
-            NSLog(@"Stream event error: %@", [[stream streamError] localizedDescription]);
+            NSLog(@"[NATIVE] Stream event error: %@", [[stream streamError] localizedDescription]);
 
             if (wasOpenned) {
-                self.errorEventHandler([[stream streamError] localizedDescription]);
+                self.errorEventHandler([[stream streamError] localizedDescription], @"general");
                 self.closeEventHandler(TRUE);
             }
             else {
-                self.errorEventHandler([[stream streamError] localizedDescription]);
+                self.errorEventHandler([[stream streamError] localizedDescription], @"general");
                 self.openErrorEventHandler([[stream streamError] localizedDescription]);
             }
             //[self closeStreams];
@@ -198,6 +230,11 @@ int const WRITE_BUFFER_SIZE = 10 * 1024;
         [self writeSubarray:dataArray offset:i * WRITE_BUFFER_SIZE length:WRITE_BUFFER_SIZE];
     }
     int lastBatchPosition = (numberOfBatches - 1) * WRITE_BUFFER_SIZE;
+
+    NSTimer *timer = [NSTimer timerWithTimeInterval:writeTimeoutSeconds target:self selector:@selector(onWriteTimeout:) userInfo:nil repeats:NO];
+    [[NSRunLoop mainRunLoop] addTimer:timer forMode:NSDefaultRunLoopMode];
+    writeTimer = timer;
+
     [self writeSubarray:dataArray offset:lastBatchPosition length:(dataArray.count - lastBatchPosition)];
 }
 
@@ -224,6 +261,18 @@ int const WRITE_BUFFER_SIZE = 10 * 1024;
 - (void)closeStreams {
     [self closeOutputStream];
     [self closeInputStream];
+
+    if(writeTimer != nil){
+        [writeTimer invalidate];
+        writeTimer = nil;
+        NSLog(@"[NATIVE] writeTimer invalidate on close");
+    }
+
+    if(openTimer != nil){
+        [openTimer invalidate];
+        openTimer = nil;
+        NSLog(@"[NATIVE] openTimer invalidate on close");
+    }
 }
 
 @end
