@@ -52,7 +52,8 @@ public class SocketAdapterImpl implements SocketAdapter {
             @Override
             public void run() {
                 try {
-					socket.connect(new InetSocketAddress(host, port));
+                    socket.setSoTimeout(5000);
+					socket.connect(new InetSocketAddress(host, port), 5000);
 					invokeOpenEventHandler();
 					submitReadTask();
 				} catch (IOException e) {
