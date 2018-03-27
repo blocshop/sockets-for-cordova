@@ -158,5 +158,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## What's new
-1.2.3 - fixed ios socket closing crashes
-1.5.0 - added ios open and write timeouts, changed js errors format
+1.2.3 - fixed iOS socket closing crashes
+1.5.0 - added iOS and Android open and write timeouts, changed js errors format
+1.5.1 - fixed cordova js bridge implementation
+1.5.2 - fixed iOS open timeout

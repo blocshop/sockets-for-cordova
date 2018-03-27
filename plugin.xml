@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="cordova-plugin-socket-tcp" version="1.5.0">
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0" id="cordova-plugin-socket-tcp" version="1.5.2">
     <name>SocketsForCordova</name>
     <description>
 		This Cordova plugin provides JavaScript API, that allows you to communicate with server through TCP protocol.
@@ -49,7 +49,6 @@
 	    <!--<framework src="CoreGraphics.framework" />-->
     </platform>
 
-
     <!-- wp8 -->
     <platform name="wp8">
         <config-file target="config.xml" parent="/*">
@@ -65,7 +64,4 @@
 		<source-file src="src/wp8/src/SocketEvent.cs" target-dir="src" />
 		<source-file src="src/wp8/src/SocketStorage.cs" target-dir="src" />
     </platform>
-
-        
-
 </plugin>

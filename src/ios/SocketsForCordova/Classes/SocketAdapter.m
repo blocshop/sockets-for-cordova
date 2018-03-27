@@ -77,7 +77,8 @@ int writeTimeoutSeconds = 5.0;
 
 -(void)onOpenTimeout:(NSTimer *)timer {
     NSLog(@"[NATIVE] Open timeout: %d", openTimeoutSeconds);
-    self.errorEventHandler(@"Socket open timeout", @"openTimeout");
+    //self.errorEventHandler(@"Socket open timeout", @"openTimeout");
+    self.openErrorEventHandler(@"Socket open timeout");
     openTimer = nil;
 }
 
