@@ -41,11 +41,10 @@
         socketAdapter = nil;
     };
     socketAdapter.openErrorEventHandler = ^ void (NSString *error){
+        NSLog(@"[NATIVE] openErrorEventHandler");
         [self.commandDelegate
          sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error]
          callbackId:command.callbackId];
-
-        socketAdapter = nil;
     };
     socketAdapter.errorEventHandler = ^ void (NSString *error, NSString *errorType){
         NSMutableDictionary *errorDictionaryData = [[NSMutableDictionary alloc] init];
@@ -65,6 +64,7 @@
         [self dispatchEventWithDictionary:dataDictionary];
     };
     socketAdapter.closeEventHandler = ^ void (BOOL hasErrors) {
+        NSLog(@"[NATIVE] closeEventHandler");
         NSMutableDictionary *closeDictionaryData = [[NSMutableDictionary alloc] init];
         [closeDictionaryData setObject:@"Close" forKey:@"type"];
         [closeDictionaryData setObject:(hasErrors == TRUE ? @"true": @"false") forKey:@"hasError"];

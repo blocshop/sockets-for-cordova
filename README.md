@@ -163,3 +163,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  - 1.5.1 - fixed cordova js bridge implementation
  - 1.5.2 - fixed iOS open timeout
  - 1.5.3 - added Android open and write timeouts
+ - 1.5.4 - fixed iOS closing sockets on open timeout

@@ -80,6 +80,7 @@ int writeTimeoutSeconds = 5.0;
     //self.errorEventHandler(@"Socket open timeout", @"openTimeout");
     self.openErrorEventHandler(@"Socket open timeout");
     openTimer = nil;
+    [self close];
 }
 
 -(void)onWriteTimeout:(NSTimer *)timer {
