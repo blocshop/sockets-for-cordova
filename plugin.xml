@@ -66,6 +66,13 @@
 		<source-file src="src/wp8/src/SocketStorage.cs" target-dir="src" />
     </platform>
 
-        
-
+    <!-- firefoxos -->
+    <platform name="firefoxos">
+        <config-file target="config.xml" parent="/*">
+          <permission name="tcp-socket" description="Create TCP sockets and communicate over them." />
+        </config-file>
+        <js-module src="src/firefoxos/SocketProxy.js" name="SocketPlugin">
+            <clobbers target="Socket"/>
+        </js-module>
+    </platform>
 </plugin>
