@@ -93,7 +93,26 @@
     NSString* socketKey = [command.arguments objectAtIndex:0];
     NSArray *data = [command.arguments objectAtIndex:1];
     
-    SocketAdapter *socket = [self getSocketAdapter:socketKey];
+    SocketAdapter *socket = nil;
+    @try{
+        socket = [self getSocketAdapter:socketKey];
+    }
+    @catch(NSException *e){
+        NSLog(@"NSException: %@", e.reason);
+    }
+    
+    /*
+     * Socket could not be found in the dictionary. Connection must have been already closed.
+     */
+    if(socket == nil){
+        [self.commandDelegate runInBackground:^{
+            [self.commandDelegate
+             sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR]
+             callbackId:command.callbackId];
+        }];
+        
+        return;
+    }
     
 	[self.commandDelegate runInBackground:^{
         @try {
@@ -114,7 +133,26 @@
     
     NSString* socketKey = [command.arguments objectAtIndex:0];
 	
-	SocketAdapter *socket = [self getSocketAdapter:socketKey];
+	SocketAdapter *socket = nil;
+    @try{
+        socket = [self getSocketAdapter:socketKey];
+    }
+    @catch(NSException *e){
+        NSLog(@"NSException: %@", e.reason);
+    }
+    
+    /*
+     * Socket could not be found in the dictionary. Connection must have been already closed.
+     */
+    if(socket == nil){
+        [self.commandDelegate runInBackground:^{
+            [self.commandDelegate
+             sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR]
+             callbackId:command.callbackId];
+        }];
+        
+        return;
+    }
     
     [self.commandDelegate runInBackground:^{
         @try {
@@ -132,10 +170,27 @@
 }
 
 - (void) close:(CDVInvokedUrlCommand *) command {
-    
     NSString* socketKey = [command.arguments objectAtIndex:0];
-	
-	SocketAdapter *socket = [self getSocketAdapter:socketKey];
+    SocketAdapter *socket = nil;
+    @try{
+        socket = [self getSocketAdapter:socketKey];
+    }
+    @catch(NSException *e){
+        NSLog(@"NSException: %@", e.reason);
+    }
+    
+    /*
+     * Socket could not be found in the dictionary. Connection must have been already closed.
+     */
+    if(socket == nil){
+        [self.commandDelegate runInBackground:^{
+            [self.commandDelegate
+             sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
+             callbackId:command.callbackId];
+        }];
+        
+        return;
+    }
     
     [self.commandDelegate runInBackground:^{
         @try {
