@@ -127,6 +127,23 @@ Socket.prototype.shutdownWrite = function (success, error) {
         [ this.socketKey ]);
 };
 
+Socket.prototype.setOptions = function (success, error, options) {
+
+    success = success || function() { };
+    error = error || function() { };
+
+    if (!this._ensureState(Socket.State.CLOSED, error)) {
+        return;
+    }
+
+    exec(
+        success,
+        error,
+        CORDOVA_SERVICE_NAME,
+        "setOptions",
+        [ this.socketKey ]);
+};
+
 Socket.prototype.close = function (success, error) {
 
     success = success || function() { };

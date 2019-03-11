@@ -133,7 +133,7 @@ public class SocketPlugin extends CordovaPlugin {
 		options.setTrafficClass(getIntegerPropertyFromJSON(optionsJSON, "trafficClass"));
 		
 		try {
-			socket.close();
+			socket.setOptions(options);
 			callbackContext.success();
 		} catch (IOException e) {
 			callbackContext.error(e.toString());
