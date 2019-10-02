@@ -158,9 +158,10 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## What's new
- - 1.2.3 - fixed iOS socket closing crashes
- - 1.5.0 - added iOS open and write timeouts, changed js errors format
- - 1.5.1 - fixed cordova js bridge implementation
- - 1.5.2 - fixed iOS open timeout
- - 1.5.3 - added Android open and write timeouts
- - 1.5.4 - fixed iOS closing sockets on open timeout
+ - 1.2.3 - fixed iOS socket closing crashes [iOS]
+ - 1.5.0 - added iOS open and write timeouts, changed js errors format [iOS]
+ - 1.5.1 - fixed cordova js bridge implementation [js]
+ - 1.5.2 - fixed iOS open timeout [iOS]
+ - 1.5.3 - added Android open and write timeouts [Android]
+ - 1.5.4 - fixed iOS closing sockets on open timeout [iOS]
+ - 1.6.0 - close old existing sockets on reopen by destination ports. Removed iOS trash sources [iOS, Android]

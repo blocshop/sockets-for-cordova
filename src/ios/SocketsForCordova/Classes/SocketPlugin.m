@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, Blocshop s.r.o.
+ * Copyright (c) 2019, kitolog
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -10,7 +10,7 @@
  * by the Blocshop s.r.o.. The name of the
  * Blocshop s.r.o. may not be used to endorse or promote products derived
  * from this software without specific prior written permission.
- * THIS SOFTWARE IS PROVIDED ``AS IS'' AND WITHOUT ANY EXPRESS OR
+ * THIS SOFTWARE IS PROVIDED `AS IS` AND WITHOUT ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
@@ -28,8 +28,20 @@
     NSString *host = [command.arguments objectAtIndex:1];
     NSNumber *port = [command.arguments objectAtIndex:2];
 
+    NSLog(@"[NATIVE] OPEN socket for port: %@", port);
+
     if (socketAdapters == nil) {
         self->socketAdapters = [[NSMutableDictionary alloc] init];
+    }
+
+    if (socketAdaptersPorts == nil) {
+        self->socketAdaptersPorts = [[NSMutableDictionary alloc] init];
+    }
+
+    NSString *existsPortSocketKey = [self->socketAdaptersPorts objectForKey:port];
+    if(existsPortSocketKey != nil){
+        NSLog(@"[NATIVE] OLD socket exists for port: %@", port);
+        [self closeSocketInstance:existsPortSocketKey];
     }
 
     __block SocketAdapter* socketAdapter = [[SocketAdapter alloc] init];
@@ -37,6 +49,7 @@
         [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
 
         [self->socketAdapters setObject:socketAdapter forKey:socketKey];
+        [self->socketAdaptersPorts setObject:socketKey forKey:port];
 
         socketAdapter = nil;
     };
@@ -142,19 +155,10 @@
 }
 
 - (void) close:(CDVInvokedUrlCommand *) command {
-
     NSString* socketKey = [command.arguments objectAtIndex:0];
-
-    SocketAdapter *socket = [self getSocketAdapter:socketKey];
-
     [self.commandDelegate runInBackground:^{
         @try {
-            if (socket != nil) {
-                [socket close];
-            }else{
-                NSLog(@"[NATIVE] Close: socket is nil. SocketKey: %@", socketKey);
-            }
-
+            [self closeSocketInstance:socketKey];
             [self.commandDelegate
              sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK]
              callbackId:command.callbackId];
@@ -165,6 +169,21 @@
              callbackId:command.callbackId];
         }
     }];
+}
+
+- (void) closeSocketInstance:(NSString*) socketKey {
+    SocketAdapter *socket = [self getSocketAdapter:socketKey];
+    @try {
+        if (socket != nil) {
+            [socket close];
+            NSLog(@"[NATIVE] Close: SUCCESS. SocketKey: %@", socketKey);
+        }else{
+            NSLog(@"[NATIVE] Close: socket is nil. SocketKey: %@", socketKey);
+        }
+    }
+    @catch (NSException *e) {
+        NSLog(@"[NATIVE] Close exception: %@. SocketKey: %@", e,  socketKey);
+    }
 }
 
 - (void) setOptions: (CDVInvokedUrlCommand *) command {
