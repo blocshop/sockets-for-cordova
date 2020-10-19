@@ -26,7 +26,7 @@
     
     NSString *socketKey = [command.arguments objectAtIndex:0];
     NSString *host = [command.arguments objectAtIndex:1];
-    NSNumber *port = [NSNumber numberWithInteger:[[command.arguments objectAtIndex:2] integerValue]];
+    NSNumber *port = [command.arguments objectAtIndex:2];
 
     NSLog(@"[NATIVE] OPEN socket for port: %@", port);
 
@@ -53,18 +53,25 @@
 
         socketAdapter = nil;
     };
-    socketAdapter.openErrorEventHandler = ^ void (NSString *error){
-        NSLog(@"[NATIVE] openErrorEventHandler");
+    socketAdapter.openErrorEventHandler = ^ void (NSString *error, NSInteger code){
+        NSLog(@"[NATIVE] openErrorEventHandler. Code %ld", code);
+
+        NSMutableDictionary *errorDictionaryData = [[NSMutableDictionary alloc] init];
+        [errorDictionaryData setObject:error forKey:@"message"];
+        [errorDictionaryData setObject:socketKey forKey:@"socketKey"];
+        [errorDictionaryData setObject:[NSString stringWithFormat: @"%ld", (long)code] forKey:@"code"];
+
         [self.commandDelegate
-         sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error]
+         sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsDictionary:errorDictionaryData]
          callbackId:command.callbackId];
     };
-    socketAdapter.errorEventHandler = ^ void (NSString *error, NSString *errorType){
+    socketAdapter.errorEventHandler = ^ void (NSString *error, NSString *errorType, NSInteger code){
         NSMutableDictionary *errorDictionaryData = [[NSMutableDictionary alloc] init];
         [errorDictionaryData setObject:@"Error" forKey:@"type"];
         [errorDictionaryData setObject:errorType forKey:@"errorType"];
         [errorDictionaryData setObject:error forKey:@"errorMessage"];
         [errorDictionaryData setObject:socketKey forKey:@"socketKey"];
+        [errorDictionaryData setObject:[NSString stringWithFormat: @"%ld", (long)code] forKey:@"code"];
 
         [self dispatchEventWithDictionary:errorDictionaryData];
     };

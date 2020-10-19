@@ -78,14 +78,14 @@ int writeTimeoutSeconds = 5.0;
 -(void)onOpenTimeout:(NSTimer *)timer {
     NSLog(@"[NATIVE] Open timeout: %d", openTimeoutSeconds);
     //self.errorEventHandler(@"Socket open timeout", @"openTimeout");
-    self.openErrorEventHandler(@"Socket open timeout");
+    self.openErrorEventHandler(@"Socket open timeout", 0);
     openTimer = nil;
     [self close];
 }
 
 -(void)onWriteTimeout:(NSTimer *)timer {
     NSLog(@"[NATIVE] Write timeout: %d", writeTimeoutSeconds);
-    self.errorEventHandler(@"Socket write timeout", @"writeTimeout");
+    self.errorEventHandler(@"Socket write timeout", @"writeTimeout", 0);
     writeTimer = nil;
 }
 
@@ -208,13 +208,23 @@ int writeTimeoutSeconds = 5.0;
         {
             NSLog(@"[NATIVE] Stream event error: %@", [[stream streamError] localizedDescription]);
 
+            NSInteger code = [[stream streamError] code];
+
             if (wasOpenned) {
-                self.errorEventHandler([[stream streamError] localizedDescription], @"general");
+                self.errorEventHandler([[stream streamError] localizedDescription], @"general", code);
+                self.openErrorEventHandler([[stream streamError] localizedDescription],
+                    code);
+                if(openTimer != nil){
+                    NSLog(@"[NATIVE] openTimer invalidate on open event");
+                    [openTimer invalidate];
+                    openTimer = nil;
+                }
                 self.closeEventHandler(TRUE);
             }
             else {
-                self.errorEventHandler([[stream streamError] localizedDescription], @"general");
-                self.openErrorEventHandler([[stream streamError] localizedDescription]);
+                self.errorEventHandler([[stream streamError] localizedDescription], @"general", code);
+                self.openErrorEventHandler([[stream streamError] localizedDescription],
+                    code);
             }
             //[self closeStreams];
             break;

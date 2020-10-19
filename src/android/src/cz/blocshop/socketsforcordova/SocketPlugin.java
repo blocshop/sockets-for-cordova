@@ -259,6 +259,7 @@ public class SocketPlugin extends CordovaPlugin {
                 JSONObject event = new JSONObject();
                 event.put("type", "Error");
                 event.put("errorMessage", errorMessage);
+                event.put("code", 0);
                 event.put("socketKey", socketKey);
 
                 dispatchEvent(event);
@@ -277,7 +278,11 @@ public class SocketPlugin extends CordovaPlugin {
 
         @Override
         public void accept(String errorMessage) {
-            this.openCallbackContext.error(errorMessage);
+            JSONObject event = new JSONObject();
+            event.put("errorMessage", errorMessage);
+            event.put("socketKey", "key");
+            event.put("code", 0);
+            this.openCallbackContext.error(event);
         }
     }
 

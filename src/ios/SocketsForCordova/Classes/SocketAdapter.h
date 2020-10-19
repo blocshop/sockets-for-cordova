@@ -36,9 +36,9 @@
 - (void)stream:(NSStream *)stream handleEvent:(NSStreamEvent)event;
 
 @property (copy) void (^openEventHandler)();
-@property (copy) void (^openErrorEventHandler)(NSString*);
+@property (copy) void (^openErrorEventHandler)(NSString*, NSInteger);
 @property (copy) void (^dataConsumer)(NSArray*);
 @property (copy) void (^closeEventHandler)(BOOL);
-@property (copy) void (^errorEventHandler)(NSString*, NSString *);
+@property (copy) void (^errorEventHandler)(NSString*, NSString *, NSInteger);
 
 @end
