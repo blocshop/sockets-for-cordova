@@ -166,3 +166,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  - 1.5.4 - fixed iOS closing sockets on open timeout [iOS]
  - 1.6.0 - close old existing sockets on reopen by destination ports. Removed iOS trash sources [iOS, Android]
  - 1.7.0 - added codes to error handlers [iOS, Android]
+ - 1.7.1 - error handler bugfixes [Android]
