@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015, Blocshop s.r.o.
+ * Copyright (c) 2019, kitolog
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms are permitted
@@ -19,6 +19,7 @@
 
 @interface SocketPlugin : CDVPlugin {
     NSMutableDictionary *socketAdapters;
+    NSMutableDictionary *socketAdaptersPorts;
 }
 
 -(void) open: (CDVInvokedUrlCommand *) command;

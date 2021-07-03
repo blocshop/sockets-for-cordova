@@ -27,6 +27,11 @@ Socket.State[Socket.State.OPENING = 1] = "OPENING";
 Socket.State[Socket.State.OPENED = 2] = "OPENED";
 Socket.State[Socket.State.CLOSING = 3] = "CLOSING";
 
+Socket.ErrorType = {};
+Socket.ErrorType[Socket.ErrorType.GENERAL = 0] = "general";
+Socket.ErrorType[Socket.ErrorType.OPEN_TIMEOUT = 1] = "openTimeout";
+Socket.ErrorType[Socket.ErrorType.WRITE_TIMEOUT = 2] = "writeTimeout";
+
 function Socket() {
     this._state = Socket.State.CLOSED;
     this.onData = null;
@@ -37,8 +42,10 @@ function Socket() {
 
 Socket.prototype.open = function (host, port, success, error) {
 
-    success = success || function() { };
-    error = error || function() { };
+    success = success || function () {
+        };
+    error = error || function () {
+        };
 
     if (!this._ensureState(Socket.State.CLOSED, error)) {
         return;
@@ -64,7 +71,7 @@ Socket.prototype.open = function (host, port, success, error) {
                 _that.onData(new Uint8Array(payload.data));
                 break;
             case "Error":
-                _that.onError(payload.errorMessage);
+                _that.onError(payload);
                 break;
             default:
                 console.error("SocketsForCordova: Unknown event type " + payload.type + ", socket key: " + payload.socketKey);
@@ -80,19 +87,25 @@ Socket.prototype.open = function (host, port, success, error) {
             window.document.addEventListener(SOCKET_EVENT, socketEventHandler);
             success();
         },
-        function(errorMessage) {
+        function (errorMessage) {
             _that._state = Socket.State.CLOSED;
             error(errorMessage);
         },
         CORDOVA_SERVICE_NAME,
         "open",
-        [ this.socketKey, host, port ]);
+        [
+            this.socketKey,
+            host,
+            port
+        ]);
 };
 
 Socket.prototype.write = function (data, success, error) {
 
-    success = success || function() { };
-    error = error || function() { };
+    success = success || function () {
+        };
+    error = error || function () {
+        };
 
     if (!this._ensureState(Socket.State.OPENED, error)) {
         return;
@@ -107,13 +120,18 @@ Socket.prototype.write = function (data, success, error) {
         error,
         CORDOVA_SERVICE_NAME,
         "write",
-        [ this.socketKey, dataToWrite ]);
+        [
+            this.socketKey,
+            dataToWrite
+        ]);
 };
 
 Socket.prototype.shutdownWrite = function (success, error) {
 
-    success = success || function() { };
-    error = error || function() { };
+    success = success || function () {
+        };
+    error = error || function () {
+        };
 
     if (!this._ensureState(Socket.State.OPENED, error)) {
         return;
@@ -124,13 +142,15 @@ Socket.prototype.shutdownWrite = function (success, error) {
         error,
         CORDOVA_SERVICE_NAME,
         "shutdownWrite",
-        [ this.socketKey ]);
+        [this.socketKey]);
 };
 
 Socket.prototype.close = function (success, error) {
 
-    success = success || function() { };
-    error = error || function() { };
+    success = success || function () {
+        };
+    error = error || function () {
+        };
 
     if (!this._ensureState(Socket.State.OPENED, error)) {
         return;
@@ -143,21 +163,21 @@ Socket.prototype.close = function (success, error) {
         error,
         CORDOVA_SERVICE_NAME,
         "close",
-        [ this.socketKey ]);
+        [this.socketKey]);
 };
 
 Object.defineProperty(Socket.prototype, "state", {
-    get: function () {
+    get          : function () {
         return this._state;
     },
-    enumerable: true,
-    configurable: true
+    enumerable   : true,
+    configurable : true
 });
 
-Socket.prototype._ensureState = function(requiredState, errorCallback) {
+Socket.prototype._ensureState = function (requiredState, errorCallback) {
     var state = this._state;
     if (state != requiredState) {
-        window.setTimeout(function() {
+        window.setTimeout(function () {
             errorCallback("Invalid operation for this socket state: " + Socket.State[state]);
         });
         return false;
@@ -206,7 +226,7 @@ if (navigator.userAgent.match(/iemobile/i)) {
             },
             CORDOVA_SERVICE_NAME,
             "registerWPEventDispatcher",
-            [ ]);
+            []);
     });
 }
 

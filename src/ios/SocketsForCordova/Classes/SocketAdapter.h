@@ -19,6 +19,14 @@
 
 @interface SocketAdapter : NSObject <NSStreamDelegate> {
 @public
+    CFReadStreamRef readStream1;
+    CFWriteStreamRef writeStream1;
+
+    NSInputStream *inputStream1;
+    NSOutputStream *outputStream1;
+
+    NSTimer *openTimer;
+    NSTimer *writeTimer;
 }
 
 - (void)open:(NSString *)host port:(NSNumber*)port;
@@ -28,9 +36,9 @@
 - (void)stream:(NSStream *)stream handleEvent:(NSStreamEvent)event;
 
 @property (copy) void (^openEventHandler)();
-@property (copy) void (^openErrorEventHandler)(NSString*);
+@property (copy) void (^openErrorEventHandler)(NSString*, NSInteger);
 @property (copy) void (^dataConsumer)(NSArray*);
 @property (copy) void (^closeEventHandler)(BOOL);
-@property (copy) void (^errorEventHandler)(NSString*);
+@property (copy) void (^errorEventHandler)(NSString*, NSString *, NSInteger);
 
 @end

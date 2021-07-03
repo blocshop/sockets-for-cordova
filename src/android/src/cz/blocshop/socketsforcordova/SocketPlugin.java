@@ -1,7 +1,7 @@
 /**
  * Copyright (c) 2015, Blocshop s.r.o.
  * All rights reserved.
- *
+ * <p>
  * Redistribution and use in source and binary forms are permitted
  * provided that the above copyright notice and this paragraph are
  * duplicated in all such forms and that any documentation,
@@ -31,230 +31,279 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import android.annotation.SuppressLint;
+import android.util.Log;
 
 public class SocketPlugin extends CordovaPlugin {
-	
-	Map<String, SocketAdapter> socketAdapters = new HashMap<String, SocketAdapter>(); 
-	
-	@Override
-	public boolean execute(String action, CordovaArgs args, CallbackContext callbackContext) throws JSONException {
 
-		if (action.equals("open")) {
-			this.open(args, callbackContext);
-		} else if (action.equals("write")) {
-			this.write(args, callbackContext);
-		} else if (action.equals("shutdownWrite")) {
-			this.shutdownWrite(args, callbackContext);
-		} else if (action.equals("close")) {
-			this.close(args, callbackContext);
-		} else if (action.equals("setOptions")) {
-			this.setOptions(args, callbackContext);
-		} else {
-			callbackContext.error(String.format("SocketPlugin - invalid action:", action));
-			return false;
-		}
-		return true;
-	}
-	
-	private void open(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
-		String socketKey = args.getString(0);
-		String host = args.getString(1);
-		int port = args.getInt(2);
-		
-		SocketAdapter socketAdapter = new SocketAdapterImpl();
-		socketAdapter.setCloseEventHandler(new CloseEventHandler(socketKey));
-		socketAdapter.setDataConsumer(new DataConsumer(socketKey));
-		socketAdapter.setErrorEventHandler(new ErrorEventHandler(socketKey));
-		socketAdapter.setOpenErrorEventHandler(new OpenErrorEventHandler(callbackContext));
-		socketAdapter.setOpenEventHandler(new OpenEventHandler(socketKey, socketAdapter, callbackContext));
-		
-		socketAdapter.open(host, port);
-	}
-	
-	private void write(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
-		String socketKey = args.getString(0);
-		JSONArray data = args.getJSONArray(1);
-		
-		byte[] dataBuffer = new byte[data.length()];
-		for(int i = 0; i < dataBuffer.length; i++) {
-			dataBuffer[i] = (byte) data.getInt(i);
-		}
-		
-		SocketAdapter socket = this.getSocketAdapter(socketKey);
-		
-		try {
-			socket.write(dataBuffer);
-			callbackContext.success();
-		} catch (IOException e) {
-			callbackContext.error(e.toString());
-		}
-	}
+    Map<String, SocketAdapter> socketAdapters = new HashMap<String, SocketAdapter>();
+    Map<String, String> socketAdaptersPorts = new HashMap<String, String>();
 
-	private void shutdownWrite(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
-		String socketKey = args.getString(0);
-		
-		SocketAdapter socket = this.getSocketAdapter(socketKey);
-		
-		try {
-			socket.shutdownWrite();
-			callbackContext.success();
-		} catch (IOException e) {
-			callbackContext.error(e.toString());
-		}
-	}
-	
-	private void close(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
-		String socketKey = args.getString(0);
-		
-		SocketAdapter socket = this.getSocketAdapter(socketKey);
-		
-		try {
-			socket.close();
-			callbackContext.success();
-		} catch (IOException e) {
-			callbackContext.error(e.toString());
-		}
-	}
-	
-	private void setOptions(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
-		
-		String socketKey = args.getString(0);
-		JSONObject optionsJSON = args.getJSONObject(1);
-		
-		SocketAdapter socket = this.getSocketAdapter(socketKey);
-		
-		SocketAdapterOptions options = new SocketAdapterOptions();
-		options.setKeepAlive(getBooleanPropertyFromJSON(optionsJSON, "keepAlive"));
-		options.setOobInline(getBooleanPropertyFromJSON(optionsJSON, "oobInline"));
-		options.setReceiveBufferSize(getIntegerPropertyFromJSON(optionsJSON, "receiveBufferSize"));
-		options.setSendBufferSize(getIntegerPropertyFromJSON(optionsJSON, "sendBufferSize"));
-		options.setSoLinger(getIntegerPropertyFromJSON(optionsJSON, "soLinger"));
-		options.setSoTimeout(getIntegerPropertyFromJSON(optionsJSON, "soTimeout"));
-		options.setTrafficClass(getIntegerPropertyFromJSON(optionsJSON, "trafficClass"));
-		
-		try {
-			socket.close();
-			callbackContext.success();
-		} catch (IOException e) {
-			callbackContext.error(e.toString());
-		}
-	}
-	
-	private Boolean getBooleanPropertyFromJSON(JSONObject jsonObject, String propertyName) throws JSONException {
-		return jsonObject.has(propertyName) ? jsonObject.getBoolean(propertyName) : null;
-	}
-	
-	private Integer getIntegerPropertyFromJSON(JSONObject jsonObject, String propertyName) throws JSONException {
-		return jsonObject.has(propertyName) ? jsonObject.getInt(propertyName) : null;
-	}
-	
-	private SocketAdapter getSocketAdapter(String socketKey) {
-		if (!this.socketAdapters.containsKey(socketKey)) {
-			throw new IllegalStateException("Socket isn't connected.");
-		}
-		return this.socketAdapters.get(socketKey);
-	}
-	
-	private void dispatchEvent(JSONObject jsonEventObject) {
-		this.webView.sendJavascript(String.format("window.Socket.dispatchEvent(%s);", jsonEventObject.toString()));		
-	}	
-	
-	private class CloseEventHandler implements Consumer<Boolean> {
-		private String socketKey;
-		public CloseEventHandler(String socketKey) {
-			this.socketKey = socketKey;
-		}
-		@Override
-		public void accept(Boolean hasError) {			
-			socketAdapters.remove(this.socketKey);
-			
-			try {
-				JSONObject event = new JSONObject();
-				event.put("type", "Close");
-				event.put("hasError", hasError.booleanValue());
-				event.put("socketKey", this.socketKey);
-		
-				dispatchEvent(event);
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-	
-	private class DataConsumer implements Consumer<byte[]> {
-		private String socketKey;
-		public DataConsumer(String socketKey) {
-			this.socketKey = socketKey;
-		}
-		@SuppressLint("NewApi") 
-		@Override
-		public void accept(byte[] data) {
-			try {
-				JSONObject event = new JSONObject();
-				event.put("type", "DataReceived");
-				//event.put("data", new JSONArray(data)); NOT SUPPORTED IN API LEVEL LESS THAN 19
-				event.put("data", new JSONArray(this.toByteList(data)));
-				event.put("socketKey", socketKey);
-				
-				dispatchEvent(event);
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-		}
-		
-		private List<Byte> toByteList(byte[] array) {
-			List<Byte> byteList = new ArrayList<Byte>(array.length);
-			for (int i = 0; i < array.length; i++) {
-				byteList.add(array[i]);
-			}
-			return byteList;
-		}
-	}
-	
-	private class ErrorEventHandler implements Consumer<String> {
-		private String socketKey;
-		public ErrorEventHandler(String socketKey) {
-			this.socketKey = socketKey;
-		}
-		@Override
-		public void accept(String errorMessage) {
-			try {
-				JSONObject event = new JSONObject();
-				event.put("type", "Error");
-				event.put("errorMessage", errorMessage);
-				event.put("socketKey", socketKey);
-				
-				dispatchEvent(event);
-			} catch (JSONException e) {
-				e.printStackTrace();
-			}
-		}
-	}
-	
-	private class OpenErrorEventHandler implements Consumer<String> {
-		private CallbackContext openCallbackContext;
-		public OpenErrorEventHandler(CallbackContext openCallbackContext) {
-			this.openCallbackContext = openCallbackContext;
-		}
-		@Override
-		public void accept(String errorMessage) {
-			this.openCallbackContext.error(errorMessage);
-		}
-	}
-	
-	private class OpenEventHandler implements Consumer<Void> {
-		private String socketKey;
-		private SocketAdapter socketAdapter;
-		private CallbackContext openCallbackContext;
-		public OpenEventHandler(String socketKey, SocketAdapter socketAdapter, CallbackContext openCallbackContext) {
-			this.socketKey = socketKey;
-			this.socketAdapter = socketAdapter;
-			this.openCallbackContext = openCallbackContext;
-		}
-		@Override
-		public void accept(Void voidObject) {
-			socketAdapters.put(socketKey, socketAdapter);
-			this.openCallbackContext.success();
-		}
-	}
+    @Override
+    public boolean execute(String action, CordovaArgs args, CallbackContext callbackContext) throws JSONException {
+
+        if (action.equals("open")) {
+            this.open(args, callbackContext);
+        } else if (action.equals("write")) {
+            this.write(args, callbackContext);
+        } else if (action.equals("shutdownWrite")) {
+            this.shutdownWrite(args, callbackContext);
+        } else if (action.equals("close")) {
+            this.close(args, callbackContext);
+        } else if (action.equals("setOptions")) {
+            this.setOptions(args, callbackContext);
+        } else {
+            callbackContext.error(String.format("SocketPlugin - invalid action:", action));
+            return false;
+        }
+        return true;
+    }
+
+    private void open(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
+        String socketKey = args.getString(0);
+        String host = args.getString(1);
+        int port = args.getInt(2);
+
+        Log.d("SocketPlugin", "Open socket plugin");
+
+        SocketAdapter socketAdapter = new SocketAdapterImpl();
+        socketAdapter.setCloseEventHandler(new CloseEventHandler(socketKey));
+        socketAdapter.setDataConsumer(new DataConsumer(socketKey));
+        socketAdapter.setErrorEventHandler(new ErrorEventHandler(socketKey));
+        socketAdapter.setOpenErrorEventHandler(new OpenErrorEventHandler(callbackContext));
+        socketAdapter.setOpenEventHandler(new OpenEventHandler(socketKey, socketAdapter, callbackContext));
+
+        String portString = String.valueOf(port);
+        if (this.socketAdaptersPorts.containsKey(portString)) {
+            String existsSocketKey = this.socketAdaptersPorts.get(portString);
+            SocketAdapter existsSocket = this.getSocketAdapter(existsSocketKey);
+            try {
+                if (existsSocket != null) {
+                    existsSocket.close();
+                    Log.d("SocketPlugin", "Old socket exists. Closing.");
+                } else {
+                    Log.d("SocketPlugin", "Old socket not exists.");
+                }
+            } catch (IOException e) {
+                Log.d("SocketPlugin", "Old socket closing error: " + e.getMessage());
+            }
+        }
+
+        socketAdapters.put(socketKey, socketAdapter);
+        socketAdaptersPorts.put(portString, socketKey);
+
+        socketAdapter.open(host, port);
+    }
+
+    private void write(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
+        String socketKey = args.getString(0);
+        JSONArray data = args.getJSONArray(1);
+
+        byte[] dataBuffer = new byte[data.length()];
+        for (int i = 0; i < dataBuffer.length; i++) {
+            dataBuffer[i] = (byte) data.getInt(i);
+        }
+
+        SocketAdapter socket = this.getSocketAdapter(socketKey);
+
+        try {
+            if (socket != null) {
+                socket.write(dataBuffer);
+            }
+            callbackContext.success();
+        } catch (IOException e) {
+            callbackContext.error(e.toString());
+        }
+    }
+
+    private void shutdownWrite(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
+        String socketKey = args.getString(0);
+
+        SocketAdapter socket = this.getSocketAdapter(socketKey);
+
+        try {
+            if (socket != null) {
+                socket.shutdownWrite();
+            }
+            callbackContext.success();
+        } catch (IOException e) {
+            callbackContext.error(e.toString());
+        }
+    }
+
+    private void close(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
+        String socketKey = args.getString(0);
+
+        SocketAdapter socket = this.getSocketAdapter(socketKey);
+
+        try {
+            if (socket != null) {
+                socket.close();
+            }
+            callbackContext.success();
+        } catch (IOException e) {
+            callbackContext.error(e.toString());
+        }
+    }
+
+    private void setOptions(CordovaArgs args, CallbackContext callbackContext) throws JSONException {
+
+        String socketKey = args.getString(0);
+        JSONObject optionsJSON = args.getJSONObject(1);
+
+        SocketAdapter socket = this.getSocketAdapter(socketKey);
+        if (socket != null) {
+            SocketAdapterOptions options = new SocketAdapterOptions();
+            options.setKeepAlive(getBooleanPropertyFromJSON(optionsJSON, "keepAlive"));
+            options.setOobInline(getBooleanPropertyFromJSON(optionsJSON, "oobInline"));
+            options.setReceiveBufferSize(getIntegerPropertyFromJSON(optionsJSON, "receiveBufferSize"));
+            options.setSendBufferSize(getIntegerPropertyFromJSON(optionsJSON, "sendBufferSize"));
+            options.setSoLinger(getIntegerPropertyFromJSON(optionsJSON, "soLinger"));
+            options.setSoTimeout(getIntegerPropertyFromJSON(optionsJSON, "soTimeout"));
+            options.setTrafficClass(getIntegerPropertyFromJSON(optionsJSON, "trafficClass"));
+
+            try {
+                socket.close();
+                callbackContext.success();
+            } catch (IOException e) {
+                callbackContext.error(e.toString());
+            }
+        }
+    }
+
+    private Boolean getBooleanPropertyFromJSON(JSONObject jsonObject, String propertyName) throws JSONException {
+        return jsonObject.has(propertyName) ? jsonObject.getBoolean(propertyName) : null;
+    }
+
+    private Integer getIntegerPropertyFromJSON(JSONObject jsonObject, String propertyName) throws JSONException {
+        return jsonObject.has(propertyName) ? jsonObject.getInt(propertyName) : null;
+    }
+
+    private SocketAdapter getSocketAdapter(String socketKey) {
+        if (!this.socketAdapters.containsKey(socketKey)) {
+            Log.d("SocketPlugin", "Adapter not exists");
+            return null;
+        }
+        return this.socketAdapters.get(socketKey);
+    }
+
+    private void dispatchEvent(JSONObject jsonEventObject) {
+        this.webView.sendJavascript(String.format("window.Socket.dispatchEvent(%s);", jsonEventObject.toString()));
+    }
+
+    private class CloseEventHandler implements Consumer<Boolean> {
+        private String socketKey;
+
+        public CloseEventHandler(String socketKey) {
+            this.socketKey = socketKey;
+        }
+
+        @Override
+        public void accept(Boolean hasError) {
+            socketAdapters.remove(this.socketKey);
+
+            try {
+                JSONObject event = new JSONObject();
+                event.put("type", "Close");
+                event.put("hasError", hasError.booleanValue());
+                event.put("socketKey", this.socketKey);
+
+                dispatchEvent(event);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private class DataConsumer implements Consumer<byte[]> {
+        private String socketKey;
+
+        public DataConsumer(String socketKey) {
+            this.socketKey = socketKey;
+        }
+
+        @SuppressLint("NewApi")
+        @Override
+        public void accept(byte[] data) {
+            try {
+                JSONObject event = new JSONObject();
+                event.put("type", "DataReceived");
+                //event.put("data", new JSONArray(data)); NOT SUPPORTED IN API LEVEL LESS THAN 19
+                event.put("data", new JSONArray(this.toByteList(data)));
+                event.put("socketKey", socketKey);
+
+                dispatchEvent(event);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private List<Byte> toByteList(byte[] array) {
+            List<Byte> byteList = new ArrayList<Byte>(array.length);
+            for (int i = 0; i < array.length; i++) {
+                byteList.add(array[i]);
+            }
+            return byteList;
+        }
+    }
+
+    private class ErrorEventHandler implements Consumer<String> {
+        private String socketKey;
+
+        public ErrorEventHandler(String socketKey) {
+            this.socketKey = socketKey;
+        }
+
+        @Override
+        public void accept(String errorMessage) {
+            try {
+                JSONObject event = new JSONObject();
+                event.put("type", "Error");
+                event.put("errorMessage", errorMessage);
+                event.put("code", 0);
+                event.put("socketKey", socketKey);
+
+                dispatchEvent(event);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private class OpenErrorEventHandler implements Consumer<String> {
+        private CallbackContext openCallbackContext;
+
+        public OpenErrorEventHandler(CallbackContext openCallbackContext) {
+            this.openCallbackContext = openCallbackContext;
+        }
+
+        @Override
+        public void accept(String errorMessage) {
+            try {
+                JSONObject event = new JSONObject();
+                event.put("errorMessage", errorMessage);
+                event.put("socketKey", "key");
+                event.put("code", 0);
+                this.openCallbackContext.error(event);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private class OpenEventHandler implements Consumer<Void> {
+        private String socketKey;
+        private SocketAdapter socketAdapter;
+        private CallbackContext openCallbackContext;
+
+        public OpenEventHandler(String socketKey, SocketAdapter socketAdapter, CallbackContext openCallbackContext) {
+            this.socketKey = socketKey;
+            this.socketAdapter = socketAdapter;
+            this.openCallbackContext = openCallbackContext;
+        }
+
+        @Override
+        public void accept(Void voidObject) {
+            this.openCallbackContext.success();
+        }
+    }
 }

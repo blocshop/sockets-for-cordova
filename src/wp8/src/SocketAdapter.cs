@@ -80,8 +80,8 @@ namespace Blocshop.ScoketsForCordova
 
         public void Close()
         {
-            this.CloseEventHandler(false);
             this.socket.Close();
+            this.CloseEventHandler(false);
         }
 
         private void StartReadTask()
